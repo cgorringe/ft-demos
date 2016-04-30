@@ -52,6 +52,7 @@ $ ./random-dots
 1. random-dots
 2. quilt
 3. plasma
+4. nb-logo
 
 
 _____
