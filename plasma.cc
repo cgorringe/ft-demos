@@ -47,7 +47,7 @@
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-
+#define ZLAYER 3  // 0 for background layer
 
 void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, int b2, Color palette[]) {
     float k;
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     for (int y=0; y < (height * 2); y++) {
         for (int x=0; x < (width * 2); x++) {
             plasma1[dst] = (uint8_t)(64 + 63 * sin( sqrt( (double)((height-y)*(height-y)) 
-                                                          + ((width-x)*(width-x)) ) / 12 ));
+                                                          + ((width-x)*(width-x)) ) / 5 ));
             plasma2[dst] = (uint8_t)(64 + 63 * sin( (double) x / (12 + 4.5 * cos((double) y / 19)) )
                                              * cos( (double) y / (10 + 3.5 * sin((double) x / 14)) ) );
             dst++;
@@ -107,18 +107,19 @@ int main(int argc, char *argv[]) {
     int halfwidth = (width >> 1);
     int halfheight = (height >> 1);
     int count = 0;
+    double foo = 3;
 
     while (1) {
 
         // move plasma with sine functions
         w = (float)halfwidth - 1;
         h = (float)halfheight - 1;
-        x1 = halfwidth  + (int)(w * cos( (double)  count /  97 ));
-        x2 = halfwidth  + (int)(w * sin( (double) -count / 114 ));
-        x3 = halfwidth  + (int)(w * sin( (double) -count / 137 ));
-        y1 = halfheight + (int)(h * sin( (double)  count / 123 ));
-        y2 = halfheight + (int)(h * cos( (double) -count /  75 ));
-        y3 = halfheight + (int)(h * cos( (double) -count / 108 ));
+        x1 = halfwidth  + (int)(w * cos( (double)  count /  97 / foo ));
+        x2 = halfwidth  + (int)(w * sin( (double) -count / 114 / foo ));
+        x3 = halfwidth  + (int)(w * sin( (double) -count / 137 / foo ));
+        y1 = halfheight + (int)(h * sin( (double)  count / 123 / foo ));
+        y2 = halfheight + (int)(h * cos( (double) -count /  75 / foo ));
+        y3 = halfheight + (int)(h * cos( (double) -count / 108 / foo ));
         src1 = y1 * width * 2 + x1;
         src2 = y2 * width * 2 + x2;
         src3 = y3 * width * 2 + x3;
@@ -145,10 +146,9 @@ int main(int argc, char *argv[]) {
         }
 
         // send canvas
-        // uncomment to set z layer to other than background layer (0)
-        //canvas.SetOffset(0, 0, 1);  // last is z layer
+        canvas.SetOffset(0, 0, ZLAYER);
         canvas.Send();
-        usleep(20 * 1000);
+        usleep(10 * 1000);
 
         count++;
         if (count == INT_MAX) { count=0; }
