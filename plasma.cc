@@ -47,7 +47,8 @@
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-#define ZLAYER 3  // 0 for background layer
+#define ZLAYER 3   // 0 for background layer
+#define PALETTE 0  // 0=Rainbow, 1=RGB, 2=Nebula, 3=Fire, 4=Bluegreen
 
 void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, int b2, Color palette[]) {
     float k;
@@ -74,16 +75,57 @@ int main(int argc, char *argv[]) {
     UDPFlaschenTaschen canvas(socket, width, height);
     canvas.Clear();
 
-    // set the color palette to a rainbow of colors
+    // set the color palette
     Color palette[256];
-    colorGradient( 0,   31,  255, 0,   255, 0,   0,   255, palette );
-    colorGradient( 32,  63,  0,   0,   255, 0,   255, 255, palette );
-    colorGradient( 64,  95,  0,   255, 255, 0,   255,   0, palette );
-    colorGradient( 96,  127, 0,   255, 0,   127, 255,   0, palette );
-    colorGradient( 128, 159, 127, 255, 0,   255, 255,   0, palette );
-    colorGradient( 160, 191, 255, 255, 0,   255, 127,   0, palette );
-    colorGradient( 192, 223, 255, 127, 0,   255, 0,     0, palette );
-    colorGradient( 224, 255, 255, 0,   0,   255, 0,   255, palette );
+    switch (PALETTE) {
+      case 0:
+        // Rainbow
+        colorGradient(   0,  35, 255,   0, 255,   0,   0, 255, palette );  // magenta -> blue
+        colorGradient(  36,  71,   0,   0, 255,   0, 255, 255, palette );  // blue -> cyan
+        colorGradient(  72, 107,   0, 255, 255,   0, 255,   0, palette );  // cyan -> green
+        colorGradient( 108, 143,   0, 255,   0, 255, 255,   0, palette );  // green -> yellow
+        colorGradient( 144, 179, 255, 255,   0, 255, 127,   0, palette );  // yellow -> orange
+        colorGradient( 180, 215, 255, 127,   0, 255,   0,   0, palette );  // orange -> red
+        colorGradient( 216, 255, 255,   0,   0, 255,   0, 255, palette );  // red -> magenta
+        break;
+      case 1:
+        // RGB + White
+        colorGradient(   0,  63,   0,   0,   0, 255,   0,   0, palette );  // black -> red
+        colorGradient(  64, 127,   0,   0,   0,   0, 255,   0, palette );  // black -> green
+        colorGradient( 128, 191,   0,   0,   0,   0,   0, 255, palette );  // black -> blue
+        colorGradient( 192, 255,   0,   0,   0, 255, 255, 255, palette );  // black -> white
+        break;
+      case 2:
+        // Nebula
+        colorGradient(   0,  31,   0,   0,   0,   0,   0, 127, palette );  // black -> half blue
+        colorGradient(  32,  95,   0,   0, 127, 127,   0, 255, palette );  // half blue -> blue-violet
+        colorGradient(  96, 159, 127,   0, 255, 255,   0,   0, palette );  // blue-violet -> red
+        colorGradient( 160, 191, 255,   0,   0, 255, 255, 255, palette );  // red -> white
+        colorGradient( 192, 255, 255, 255, 255,   0,   0,   0, palette );  // white -> black
+        break;
+      case 3:
+        // Fire
+        colorGradient(   0,  23,   0,   0,   0,   0,   0, 127, palette );  // black -> half blue
+        colorGradient(  24,  47,   0,   0, 127, 255,   0,   0, palette );  // half blue -> red
+        colorGradient(  48,  95, 255,   0,   0, 255, 255,   0, palette );  // red -> yellow
+        colorGradient(  96, 127, 255, 255,   0, 255, 255, 255, palette );  // yellow -> white
+        colorGradient( 128, 159, 255, 255, 255, 255, 255,   0, palette );  // white -> yellow
+        colorGradient( 160, 207, 255, 255,   0, 255,   0,   0, palette );  // yellow -> red
+        colorGradient( 208, 231, 255,   0,   0,   0,   0, 127, palette );  // red -> half blue
+        colorGradient( 232, 255,   0,   0, 127,   0,   0,   0, palette );  // half blue -> black
+        break;
+      case 4:
+        // Bluegreen
+        colorGradient(   0,  23,   0,   0,   0,   0,   0, 127, palette );  // black -> half blue
+        colorGradient(  24,  47,   0,   0, 127,   0, 127, 255, palette );  // half blue -> teal
+        colorGradient(  48,  95,   0, 127, 255,   0, 255,   0, palette );  // teal -> green
+        colorGradient(  96, 127,   0, 255,   0, 255, 255, 255, palette );  // green -> white
+        colorGradient( 128, 159, 255, 255, 255,   0, 255,   0, palette );  // white -> green
+        colorGradient( 160, 207,   0, 255,   0,   0, 127, 255, palette );  // green -> teal
+        colorGradient( 208, 231,   0, 127, 255,   0,   0, 127, palette );  // teal -> half blue
+        colorGradient( 232, 255,   0,   0, 127,   0,   0,   0, palette );  // half blue -> black
+        break;
+    }
 
     // pixel buffer
     uint8_t pixels[ width * height ];
