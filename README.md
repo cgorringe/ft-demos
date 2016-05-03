@@ -55,6 +55,7 @@ $ ./random-dots
 4. plasma
 5. plasma2 - this version uses anti-aliasing to reduce jitter
 6. blur - burred simulated sound waves or rectangles
+7. lines
 
 
 _____
