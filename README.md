@@ -51,8 +51,10 @@ $ ./random-dots
 ### Demos provided
 1. random-dots
 2. quilt
-3. plasma
-4. nb-logo
+3. nb-logo
+4. plasma
+5. plasma2 - this version uses anti-aliasing to reduce jitter
+6. blur - burred simulated sound waves or rectangles
 
 
 _____

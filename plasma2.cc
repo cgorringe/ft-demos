@@ -15,12 +15,12 @@
 // different display (e.g. a local terminal display)
 // pass the hostname as parameter:
 //
-//  ./plasma localhost
+//  ./plasma2 localhost
 //
 // or set the environment variable FT_DISPLAY to not worry about it
 //
 //  export FT_DISPLAY=localhost
-//  ./plasma
+//  ./plasma2
 //
 // --------------------------------------------------------------------------------
 //
