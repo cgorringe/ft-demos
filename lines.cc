@@ -50,14 +50,14 @@
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-#define ZLAYER 3   // 0 for background layer
+#define Z_LAYER 10      // (0-15) 0=background
+#define DELAY 150
 
 #define NUM_LINES 6
 #define SKIP_MIN 2
 #define SKIP_MAX 4
 #define LINE_ALGO 1  // 0=dots, 1=plain line, 2=anti-aliased line
 #define DRAW_FOUR 0  // 0=one line, 1=four lines
-#define DELAY 150
 
 #define TRUE 1
 #define FALSE 0
@@ -306,10 +306,10 @@ Line nextLine(int reset) {
 
   if (reset) {
     // randomly position a new line
-    lines[lines_idx].x1 = randomInt(0, DISPLAY_WIDTH);
-    lines[lines_idx].y1 = randomInt(0, DISPLAY_HEIGHT);
-    lines[lines_idx].x2 = randomInt(0, DISPLAY_WIDTH);
-    lines[lines_idx].y2 = randomInt(0, DISPLAY_HEIGHT);
+    lines[lines_idx].x1 = randomInt(1, DISPLAY_WIDTH - 2);
+    lines[lines_idx].y1 = randomInt(1, DISPLAY_HEIGHT - 2);
+    lines[lines_idx].x2 = randomInt(1, DISPLAY_WIDTH - 2);
+    lines[lines_idx].y2 = randomInt(1, DISPLAY_HEIGHT - 2);
 
     // random skip values
     skip.x1 = (randomInt(0, 1)) ? randomInt(SKIP_MIN, SKIP_MAX) : -randomInt(SKIP_MIN, SKIP_MAX);
@@ -325,13 +325,13 @@ Line nextLine(int reset) {
     lines[lines_idx].y2 = lines[old_idx].y2 + skip.y2;
 
     // reverse direction of step values of points that hit border
-    if (lines[lines_idx].x1 < 0)               { skip.x1 = randomInt(SKIP_MIN, SKIP_MAX);      }
+    if (lines[lines_idx].x1 <= 0)              { skip.x1 = randomInt(SKIP_MIN, SKIP_MAX);      }
     if (lines[lines_idx].x1 >= DISPLAY_WIDTH)  { skip.x1 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
-    if (lines[lines_idx].y1 < 0)               { skip.y1 = randomInt(SKIP_MIN, SKIP_MAX);      }
+    if (lines[lines_idx].y1 <= 0)              { skip.y1 = randomInt(SKIP_MIN, SKIP_MAX);      }
     if (lines[lines_idx].y1 >= DISPLAY_HEIGHT) { skip.y1 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
-    if (lines[lines_idx].x2 < 0)               { skip.x2 = randomInt(SKIP_MIN, SKIP_MAX);      }
+    if (lines[lines_idx].x2 <= 0)              { skip.x2 = randomInt(SKIP_MIN, SKIP_MAX);      }
     if (lines[lines_idx].x2 >= DISPLAY_WIDTH)  { skip.x2 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
-    if (lines[lines_idx].y2 < 0)               { skip.y2 = randomInt(SKIP_MIN, SKIP_MAX);      }
+    if (lines[lines_idx].y2 <= 0)              { skip.y2 = randomInt(SKIP_MIN, SKIP_MAX);      }
     if (lines[lines_idx].y2 >= DISPLAY_HEIGHT) { skip.y2 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
   }
   return lines[lines_idx];
@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
         drawFourLines(line, color, canvas);
 
         // send canvas
-        canvas.SetOffset(0, 0, ZLAYER);
+        canvas.SetOffset(0, 0, Z_LAYER);
         canvas.Send();
         usleep(DELAY * 1000);
 

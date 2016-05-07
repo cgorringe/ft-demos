@@ -42,9 +42,10 @@
 #include <stdlib.h>
 
 //                               large  small
-#define DISPLAY_WIDTH  (5*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (4*5)  //  7*5    4*5
-#define Z_LAYER 4             // 0 for background layer
+#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
+#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+#define Z_LAYER 9      // (0-15) 0=background
+#define DELAY 20
 
 #define LOGO_WIDTH 15
 #define LOGO_HEIGHT 14
@@ -120,10 +121,10 @@ int main(int argc, char *argv[]) {
         updateFromPattern(frame, nb_logo, palette[colr]);
         frame->SetOffset(x, y, Z_LAYER);
         frame->Send();
-        usleep(20 * 1000);
+        usleep(DELAY * 1000);
 
         // animate the logo
-        if ((colr % 16) == 0) {
+        if ((colr % 8) == 0) {
             x += sx;
             if (x > (DISPLAY_WIDTH - LOGO_WIDTH - 1)) {
                 x -= sx; sy = 1; y += sy;

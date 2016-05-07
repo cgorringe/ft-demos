@@ -49,7 +49,8 @@
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-#define ZLAYER 3   // 0 for background layer
+#define Z_LAYER 8      // (0-15) 0=background
+#define DELAY 10
 #define PALETTE_MAX 4  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB
 
 void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, int b2, Color palette[]) {
@@ -263,9 +264,9 @@ int main(int argc, char *argv[]) {
         }
 
         // send canvas
-        canvas.SetOffset(0, 0, ZLAYER);
+        canvas.SetOffset(0, 0, Z_LAYER);
         canvas.Send();
-        usleep(10 * 1000);
+        usleep(DELAY * 1000);
 
         count++;
         if (count == INT_MAX) { count=0; }

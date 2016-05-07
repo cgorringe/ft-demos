@@ -42,9 +42,10 @@
 #include <stdlib.h>
 
 //                               large  small
-#define DISPLAY_WIDTH  (5*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (4*5)  //  7*5    4*5
-#define ZLAYER 3              // 0 for background layer
+#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
+#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+#define Z_LAYER 8      // (0-15) 0=background
+#define DELAY 200
 #define SKIP_NUM 5            // width or height of crate
 
 int main(int argc, char *argv[]) {
@@ -87,8 +88,8 @@ int main(int argc, char *argv[]) {
         }
 
         // send canvas
-        canvas.SetOffset(0, 0, ZLAYER);
+        canvas.SetOffset(0, 0, Z_LAYER);
         canvas.Send();
-        usleep(200 * 1000);
+        usleep(DELAY * 1000);
     }
 }

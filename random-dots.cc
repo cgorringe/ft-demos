@@ -42,9 +42,10 @@
 #include <stdlib.h>
 
 //                               large  small
-#define DISPLAY_WIDTH  (5*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (4*5)  //  7*5    4*5
-#define ZLAYER 3              // 0 for background layer
+#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
+#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+#define Z_LAYER 8      // (0-15) 0=background
+#define DELAY 10
 
 int main(int argc, char *argv[]) {
     const char *hostname = NULL;   // Will use default if not set otherwise.
@@ -66,8 +67,8 @@ int main(int argc, char *argv[]) {
         canvas.SetPixel(arc4random_uniform(DISPLAY_WIDTH), arc4random_uniform(DISPLAY_HEIGHT), Color(r, g, b));
 
         // send canvas
-        canvas.SetOffset(0, 0, ZLAYER);
+        canvas.SetOffset(0, 0, Z_LAYER);
         canvas.Send();
-        usleep(10 * 1000);
+        usleep(DELAY * 1000);
     }
 }

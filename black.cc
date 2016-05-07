@@ -24,6 +24,7 @@
 
 #define DISPLAY_WIDTH  (9*5)  // large: 9*5
 #define DISPLAY_HEIGHT (7*5)  //        7*5
+#define Z_LAYER 8      // (0-15) 0=background
 
 int main(int argc, char *argv[]) {
     const char *hostname = NULL;   // Will use default if not set otherwise.
@@ -35,10 +36,10 @@ int main(int argc, char *argv[]) {
     const int socket = OpenFlaschenTaschenSocket(hostname);
     UDPFlaschenTaschen canvas(socket, DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
-    canvas.Clear();
-    // canvas.Fill(const Color &c);  // Fill screen with color.
+    //canvas.Clear();
+    canvas.Fill(Color(1, 1, 1));
 
-    // uncomment to set z layer to other than background layer (0)
-    //canvas.SetOffset(0, 0, 1);  // last is z layer
+    // send canvas
+    canvas.SetOffset(0, 0, Z_LAYER);
     canvas.Send();
 }
