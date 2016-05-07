@@ -1,11 +1,13 @@
 // -*- mode: c++; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 //
-// plasma
+// plasma  (new version)
 // Copyright (c) 2016 Carl Gorringe (carl.gorringe.org)
-// 4/28/2016
+// https://github.com/cgorringe/ft-demos
+// 5/2/2016
 //
 // Displays animated plasma effect on the Flaschen Taschen.
-// https://noisebridge.net/wiki/Flaschen_Taschen
+// This version uses anti-aliasing to smooth out jittering by 
+// supersampling by 4x and down-sampling to the display resolution.
 //
 // How to run:
 //
@@ -48,8 +50,8 @@
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 8      // (0-15) 0=background
-#define PALETTE_MAX 3  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB
 #define DELAY 10
+#define PALETTE_MAX 4  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB
 
 void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, int b2, Color palette[]) {
     float k;
@@ -119,8 +121,11 @@ int main(int argc, char *argv[]) {
         hostname = argv[1];        // hostname can be supplied as first arg
     }
 
+    int scale = 4;
     int width = DISPLAY_WIDTH;
     int height = DISPLAY_HEIGHT;
+    int dwidth = width * scale;
+    int dheight = height * scale;
 
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(hostname);
@@ -132,35 +137,38 @@ int main(int argc, char *argv[]) {
     //setPalette(0);
 
     // pixel buffer
-    uint8_t pixels[ width * height ];
+    uint8_t pixels[ dwidth * dheight ];
 
     // init precalculated plasma buffers
-    uint8_t plasma1[ width * height * 4 ];
-    uint8_t plasma2[ width * height * 4 ];
+    uint8_t plasma1[ dwidth * dheight * 4 ];
+    uint8_t plasma2[ dwidth * dheight * 4 ];
     int dst = 0;
-    for (int y=0; y < (height * 2); y++) {
-        for (int x=0; x < (width * 2); x++) {
-            plasma1[dst] = (uint8_t)(64 + 63 * sin( sqrt( (double)((height-y)*(height-y)) 
-                                                          + ((width-x)*(width-x)) ) / 5 ));
-            plasma2[dst] = (uint8_t)(64 + 63 * sin( (double) x / (12 + 4.5 * cos((double) y / 19)) )
-                                             * cos( (double) y / (10 + 3.5 * sin((double) x / 14)) ) );
+    for (int y=0; y < (dheight * 2); y++) {
+        for (int x=0; x < (dwidth * 2); x++) {
+            // ** TODO: redo consts?? **
+            plasma1[dst] = (uint8_t)(64 + 63 * sin( sqrt( (double)((dheight-y)*(dheight-y)) 
+                                                          + ((dwidth-x)*(dwidth-x)) ) / 16 ));  // 5*scale
+//            plasma2[dst] = (uint8_t)(64 + 63 * sin( (double) x / (12 + 4.5 * cos((double) y / (19 * scale))) )
+//                                             * cos( (double) y / (10 + 3.5 * sin((double) x / (14 * scale))) ) );
+            plasma2[dst] = (uint8_t)(64 + 63 * sin( (double) x / (37 + 15 * cos((double) y / 74)) )
+                                             * cos( (double) y / (31 + 11 * sin((double) x / 57)) ) );
             dst++;
         }
     }
 
+    //double foo = 3;   // for 1x
+    //double foo = 10;  // for 2x
+    double foo = 10;    // for 4x
     int x1, y1, x2, y2, x3, y3, src1, src2, src3;
-    int hw = (width >> 1);
-    int hh = (height >> 1);
-    //nt w = hw - 1;
-    //int h = hh - 1;
+    int hw = (dwidth >> 1);
+    int hh = (dheight >> 1);
     int count = 0;
-    double foo = 3;
     int curPalette = 0;
 
     while (1) {
 
         // set new color palette
-        if ((count % 1000) == 0) {
+        if ((count % 2000) == 0) {
             setPalette(curPalette, palette);
             curPalette++;
             if (curPalette > PALETTE_MAX) { curPalette = 0; }
@@ -173,14 +181,14 @@ int main(int argc, char *argv[]) {
         y1 = hh + (int)(hh * sin( (double)  count / 123 / foo ));
         y2 = hh + (int)(hh * cos( (double) -count /  75 / foo ));
         y3 = hh + (int)(hh * cos( (double) -count / 108 / foo ));
-        src1 = y1 * width * 2 + x1;
-        src2 = y2 * width * 2 + x2;
-        src3 = y3 * width * 2 + x3;
+        src1 = y1 * dwidth * 2 + x1;
+        src2 = y2 * dwidth * 2 + x2;
+        src3 = y3 * dwidth * 2 + x3;
 
         // write plasma to pixel buffer
         dst = 0;
-        for (int y=0; y < height; y++) {
-            for (int x=0; x < width; x++) {
+        for (int y=0; y < dheight; y++) {
+            for (int x=0; x < dwidth; x++) {
                 // plot pixel as sum of plasma functions
                 pixels[dst] = (uint8_t)((plasma1[src1] + plasma2[src2] + plasma2[src3]) & 0xFF);
                 //pixels[dst] = (uint8_t)((plasma1[src1]) & 0xFF);
@@ -188,16 +196,71 @@ int main(int argc, char *argv[]) {
                 dst++; src1++; src2++; src3++;
             }
             // skip to next line in plasma buffers
-            src1 += width; src2 += width; src3 += width;
+            src1 += dwidth; src2 += dwidth; src3 += dwidth;
         }
 
         // copy pixel buffer to canvas
+        uint8_t dot_r, dot_g, dot_b;
+        int src = 0;
         dst = 0;
         for (int y=0; y < height; y++) {
             for (int x=0; x < width; x++) {
-                canvas.SetPixel( x, y, palette[ pixels[dst] ] );
-                dst++;
+                
+                // anti-alias by down-sampling (averaging) 4 pixels to 1
+
+                // TEST
+                /*
+                dot_r = palette[pixels[src]].r;
+                dot_g = palette[pixels[src]].g;
+                dot_b = palette[pixels[src]].b;
+                //*/
+
+              if (scale == 2) {
+                // subsample 2x2 pixels to 1
+                dot_r = ( palette[pixels[src]].r + palette[pixels[src + 1]].r 
+                        + palette[pixels[src + dwidth]].r + palette[pixels[src + dwidth + 1]].r ) >> 2;
+                dot_g = ( palette[pixels[src]].g + palette[pixels[src + 1]].g 
+                        + palette[pixels[src + dwidth]].g + palette[pixels[src + dwidth + 1]].g ) >> 2;
+                dot_b = ( palette[pixels[src]].b + palette[pixels[src + 1]].b 
+                        + palette[pixels[src + dwidth]].b + palette[pixels[src + dwidth + 1]].b ) >> 2;
+              }
+              else if (scale == 4) {
+                // subsample 4x4 pixels to 1
+                dot_r = ( palette[pixels[src + 0]].r + palette[pixels[src + 1]].r
+                        + palette[pixels[src + 2]].r + palette[pixels[src + 3]].r
+                        + palette[pixels[src + dwidth + 0]].r + palette[pixels[src + dwidth + 1]].r
+                        + palette[pixels[src + dwidth + 2]].r + palette[pixels[src + dwidth + 3]].r
+                        + palette[pixels[src + (dwidth * 2) + 0]].r + palette[pixels[src + (dwidth * 2) + 1]].r
+                        + palette[pixels[src + (dwidth * 2) + 2]].r + palette[pixels[src + (dwidth * 2) + 3]].r
+                        + palette[pixels[src + (dwidth * 3) + 0]].r + palette[pixels[src + (dwidth * 3) + 1]].r
+                        + palette[pixels[src + (dwidth * 3) + 2]].r + palette[pixels[src + (dwidth * 3) + 3]].r
+                        ) >> 4;
+                dot_g = ( palette[pixels[src + 0]].g + palette[pixels[src + 1]].g
+                        + palette[pixels[src + 2]].g + palette[pixels[src + 3]].g
+                        + palette[pixels[src + dwidth + 0]].g + palette[pixels[src + dwidth + 1]].g
+                        + palette[pixels[src + dwidth + 2]].g + palette[pixels[src + dwidth + 3]].g
+                        + palette[pixels[src + (dwidth * 2) + 0]].g + palette[pixels[src + (dwidth * 2) + 1]].g
+                        + palette[pixels[src + (dwidth * 2) + 2]].g + palette[pixels[src + (dwidth * 2) + 3]].g
+                        + palette[pixels[src + (dwidth * 3) + 0]].g + palette[pixels[src + (dwidth * 3) + 1]].g
+                        + palette[pixels[src + (dwidth * 3) + 2]].g + palette[pixels[src + (dwidth * 3) + 3]].g
+                        ) >> 4;
+                dot_b = ( palette[pixels[src + 0]].b + palette[pixels[src + 1]].b
+                        + palette[pixels[src + 2]].b + palette[pixels[src + 3]].b
+                        + palette[pixels[src + dwidth + 0]].b + palette[pixels[src + dwidth + 1]].b
+                        + palette[pixels[src + dwidth + 2]].b + palette[pixels[src + dwidth + 3]].b
+                        + palette[pixels[src + (dwidth * 2) + 0]].b + palette[pixels[src + (dwidth * 2) + 1]].b
+                        + palette[pixels[src + (dwidth * 2) + 2]].b + palette[pixels[src + (dwidth * 2) + 3]].b
+                        + palette[pixels[src + (dwidth * 3) + 0]].b + palette[pixels[src + (dwidth * 3) + 1]].b
+                        + palette[pixels[src + (dwidth * 3) + 2]].b + palette[pixels[src + (dwidth * 3) + 3]].b
+                        ) >> 4;
+              }
+
+                //canvas.SetPixel( x, y, palette[ pixels[dst] ] );
+                canvas.SetPixel( x, y, Color(dot_r, dot_g, dot_b) );
+                dst++; src += scale;
             }
+            //src += dwidth;  // skip every other row (2x)
+            src += (dwidth * 2);  // skip every other row (4x)
         }
 
         // send canvas

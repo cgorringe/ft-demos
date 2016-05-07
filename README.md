@@ -4,10 +4,14 @@ By [Carl Gorringe](http://carl.gorringe.org)
 
 Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Project](https://noisebridge.net/wiki/Flaschen_Taschen), based on [code written by hzeller](https://github.com/hzeller/flaschen-taschen).
 
-![](img/random-dots.jpg) ![](img/quilt.jpg)
-![](img/nb-logo.jpg) ![](img/lines.jpg) 
-![](img/plasma_large.jpg) ![](img/plasma_small.jpg) 
-![](img/blur_wave.jpg) ![](img/blur_pong.jpg) 
+![](img/random-dots.jpg) 
+![](img/quilt.jpg) 
+![](img/nb-logo.jpg) 
+![](img/lines.jpg) 
+![](img/plasma_large.jpg) 
+![](img/plasma_small.jpg) 
+![](img/blur_wave.jpg) 
+![](img/blur_pong.jpg) 
 
 
 ### Install How-to
@@ -57,8 +61,8 @@ $ ./random-dots
 1. random-dots
 2. quilt
 3. nb-logo
-4. plasma
-5. plasma2 - this version uses anti-aliasing to reduce jitter
+4. plasma-old
+5. plasma - this version uses anti-aliasing to reduce jitter
 6. blur - burred simulated sound waves or rectangles
 7. lines
 
