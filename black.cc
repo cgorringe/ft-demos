@@ -37,9 +37,12 @@ int main(int argc, char *argv[]) {
     UDPFlaschenTaschen canvas(socket, DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
     //canvas.Clear();
-    canvas.Fill(Color(1, 1, 1));
+    while (1) {
+        canvas.Fill(Color(1, 1, 1));
 
-    // send canvas
-    canvas.SetOffset(0, 0, Z_LAYER);
-    canvas.Send();
+        // send canvas
+        canvas.SetOffset(0, 0, Z_LAYER);
+        canvas.Send();
+        sleep(5);
+    }
 }

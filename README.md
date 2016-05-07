@@ -4,6 +4,11 @@ By [Carl Gorringe](http://carl.gorringe.org)
 
 Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Project](https://noisebridge.net/wiki/Flaschen_Taschen), based on [code written by hzeller](https://github.com/hzeller/flaschen-taschen).
 
+![](img/random-dots.jpg) ![](img/quilt.jpg)
+![](img/nb-logo.jpg) ![](img/lines.jpg) 
+![](img/plasma_large.jpg) ![](img/plasma_small.jpg) 
+![](img/blur_wave.jpg) ![](img/blur_pong.jpg) 
+
 
 ### Install How-to
 

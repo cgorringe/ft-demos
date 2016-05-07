@@ -50,12 +50,12 @@
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-#define Z_LAYER 10      // (0-15) 0=background
+#define Z_LAYER 11      // (0-15) 0=background
 #define DELAY 150
 
 #define NUM_LINES 6
 #define SKIP_MIN 2
-#define SKIP_MAX 4
+#define SKIP_MAX 3
 #define LINE_ALGO 1  // 0=dots, 1=plain line, 2=anti-aliased line
 #define DRAW_FOUR 0  // 0=one line, 1=four lines
 
