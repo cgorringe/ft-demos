@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <time.h>
 
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
@@ -47,11 +48,18 @@
 #define Z_LAYER 8      // (0-15) 0=background
 #define DELAY 10
 
+// random int in range min to max inclusive
+int randomInt(int min, int max) {
+  return (random() % (max - min + 1) + min);
+}
+
 int main(int argc, char *argv[]) {
     const char *hostname = NULL;   // Will use default if not set otherwise.
     if (argc > 1) {
         hostname = argv[1];        // Hostname can be supplied as first arg
     }
+
+    srandom(time(NULL)); // seed the random generator
 
     // Open socket and create our canvas.
     const int socket = OpenFlaschenTaschenSocket(hostname);
@@ -60,11 +68,11 @@ int main(int argc, char *argv[]) {
     canvas.Clear();
 
     while (1) {
-        int r = arc4random_uniform(256);
-        int g = arc4random_uniform(256);
-        int b = arc4random_uniform(256);
+        int r = randomInt(0, 255);
+        int g = randomInt(0, 255);
+        int b = randomInt(0, 255);
 
-        canvas.SetPixel(arc4random_uniform(DISPLAY_WIDTH), arc4random_uniform(DISPLAY_HEIGHT), Color(r, g, b));
+        canvas.SetPixel(randomInt(0, DISPLAY_WIDTH-1), randomInt(0, DISPLAY_HEIGHT-1), Color(r, g, b));
 
         // send canvas
         canvas.SetOffset(0, 0, Z_LAYER);

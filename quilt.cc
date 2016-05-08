@@ -40,13 +40,20 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <time.h>
 
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 8      // (0-15) 0=background
-#define DELAY 200
+#define DELAY 10  // 200
 #define SKIP_NUM 5            // width or height of crate
+
+
+// random int in range min to max inclusive
+int randomInt(int min, int max) {
+  return (random() % (max - min + 1) + min);
+}
 
 int main(int argc, char *argv[]) {
     const char *hostname = NULL;   // Will use default if not set otherwise.
@@ -64,12 +71,12 @@ int main(int argc, char *argv[]) {
     canvas.Clear();
 
     while (1) {
-        int r = arc4random_uniform(256);
-        int g = arc4random_uniform(256);
-        int b = arc4random_uniform(256);
+        int r = randomInt(0, 255);
+        int g = randomInt(0, 255);
+        int b = randomInt(0, 255);
 
-        int x1 = arc4random_uniform(SKIP_NUM);
-        int y1 = arc4random_uniform(SKIP_NUM);
+        int x1 = randomInt(0, SKIP_NUM - 1);
+        int y1 = randomInt(0, SKIP_NUM - 1);
 
         for (int y=y1; y < DISPLAY_HEIGHT; y += SKIP_NUM) {
             for (int x=x1; x < DISPLAY_WIDTH; x += SKIP_NUM) {
@@ -84,12 +91,18 @@ int main(int argc, char *argv[]) {
                 canvas.SetPixel(DISPLAY_WIDTH - y, x, Color(r, g, b));
                 canvas.SetPixel(y, DISPLAY_HEIGHT - x, Color(r, g, b));
                 canvas.SetPixel(DISPLAY_WIDTH - y, DISPLAY_HEIGHT - x, Color(r, g, b));
+
+                // send canvas
+                canvas.SetOffset(0, 0, Z_LAYER);
+                canvas.Send();
+                usleep(DELAY * 1000);
             }
         }
-
+        /*
         // send canvas
         canvas.SetOffset(0, 0, Z_LAYER);
         canvas.Send();
         usleep(DELAY * 1000);
+        //*/
     }
 }

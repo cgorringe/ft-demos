@@ -46,6 +46,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <math.h>
+#include <time.h>
 
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
@@ -78,7 +79,8 @@ int lines_idx;
 
 // random int in range min to max inclusive
 int randomInt(int min, int max) {
-  return (arc4random_uniform(max - min + 1) + min);
+  //return (arc4random_uniform(max - min + 1) + min);
+  return (random() % (max - min + 1) + min);
 }
 
 // draw endpoints of line
@@ -361,6 +363,8 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         hostname = argv[1];        // hostname can be supplied as first arg
     }
+
+    srandom(time(NULL)); // seed the random generator
 
     int width = DISPLAY_WIDTH;
     int height = DISPLAY_HEIGHT;

@@ -7,9 +7,9 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 ![](img/random-dots.jpg) 
 ![](img/quilt.jpg) 
 ![](img/nb-logo.jpg) 
-![](img/lines.jpg) 
 ![](img/plasma_large.jpg) 
 ![](img/plasma_small.jpg) 
+![](img/lines.jpg) 
 ![](img/blur_wave.jpg) 
 ![](img/blur_pong.jpg) 
 
@@ -61,10 +61,9 @@ $ ./random-dots
 1. random-dots
 2. quilt
 3. nb-logo
-4. plasma-old
-5. plasma - this version uses anti-aliasing to reduce jitter
-6. blur - burred simulated sound waves or rectangles
-7. lines
+4. plasma - this version uses anti-aliasing to reduce jitter
+5. blur - burred simulated sound waves or rectangles
+6. lines
 
 
 _____

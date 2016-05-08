@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <limits.h>
+#include <time.h>
 
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
@@ -49,6 +50,12 @@
 #define Z_LAYER 8      // (0-15) 0=background
 #define DELAY 50
 #define PALETTE_MAX 2  // 0=Nebula, 1=Fire, 2=Bluegreen
+#define DEMO 1         // 0=wave, 1=boxes
+
+// random int in range min to max inclusive
+int randomInt(int min, int max) {
+  return (random() % (max - min + 1) + min);
+}
 
 void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, int b2, Color palette[]) {
     float k;
@@ -129,10 +136,10 @@ void drawBox(int x1, int y1, int x2, int y2, uint8_t color, int width, int heigh
 
 void drawRandomBox(int width, int height, uint8_t pixels[]) {
 
-    int x1 = arc4random_uniform(width - 1);
-    int y1 = arc4random_uniform(height - 1);
-    int x2 = arc4random_uniform(width - x1 - 1) + x1;
-    int y2 = arc4random_uniform(height - y1 - 1) + y1;
+    int x1 = randomInt(0, width - 2);
+    int y1 = randomInt(0, height - 2);
+    int x2 = randomInt(x1, width - 1);
+    int y2 = randomInt(y1, height - 1);
     uint8_t color = 0xFF;
     drawBox(x1, y1, x2, y2, color, width, height, pixels);
 }
@@ -143,7 +150,7 @@ void drawRandomWave(int width, int height, uint8_t pixels[]) {
     int hh = height >> 1;
 
     for (int x=0; x < width; x++) {
-        wave += (1 - arc4random_uniform(3));
+        wave += randomInt(-1, +1);
         y = hh + wave;
         if ((y < 0) || (y >= height)) { y = hh; }
         pixels[ (y * width) + x ] = 0xFF;
@@ -163,6 +170,7 @@ void blur1(int width, int height, uint8_t pixels[]) {
     }
 }
 
+// NOT USED
 void blur2(int width, int height, uint8_t pixels[]) {
 
     int size = width * (height - 1) - 1;
@@ -181,6 +189,8 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         hostname = argv[1];        // hostname can be supplied as first arg
     }
+
+    srandom(time(NULL)); // seed the random generator
 
     int width = DISPLAY_WIDTH;
     int height = DISPLAY_HEIGHT;
@@ -209,9 +219,10 @@ int main(int argc, char *argv[]) {
         }
 
         if ((count % 2) == 0) {
-            // ** PICK ONE **
-            //drawRandomBox(width, height, pixels);
-            drawRandomWave(width, height, pixels);
+            switch (DEMO) {
+                case 0: drawRandomWave(width, height, pixels); break;
+                case 1: drawRandomBox(width, height, pixels); break;
+            }
         }
 
         // draw black border & blur on every frame
