@@ -61,6 +61,8 @@ int main(int argc, char *argv[]) {
         hostname = argv[1];        // Hostname can be supplied as first arg
     }
 
+    srandom(time(NULL)); // seed the random generator
+
     // Open socket and create our canvas.
     const int socket = OpenFlaschenTaschenSocket(hostname);
     UDPFlaschenTaschen canvas(socket, DISPLAY_WIDTH, DISPLAY_HEIGHT);
