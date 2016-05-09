@@ -42,9 +42,9 @@
 #include <stdlib.h>
 
 //                               large  small
-#define DISPLAY_WIDTH  (5*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (4*5)  //  7*5    4*5
-#define Z_LAYER 9      // (0-15) 0=background
+#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
+#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+#define Z_LAYER 11      // (0-15) 0=background
 #define DELAY 40  // 20
 
 #define LOGO_WIDTH 16

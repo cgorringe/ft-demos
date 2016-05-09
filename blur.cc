@@ -50,7 +50,7 @@
 #define Z_LAYER 8      // (0-15) 0=background
 #define DELAY 50
 #define PALETTE_MAX 2  // 0=Nebula, 1=Fire, 2=Bluegreen
-#define DEMO 1         // 0=wave, 1=boxes
+#define DEMO 0         // 0=wave, 1=boxes
 
 // random int in range min to max inclusive
 int randomInt(int min, int max) {

@@ -24,7 +24,7 @@
 
 #define DISPLAY_WIDTH  (9*5)  // large: 9*5
 #define DISPLAY_HEIGHT (7*5)  //        7*5
-#define Z_LAYER 8      // (0-15) 0=background
+#define Z_LAYER 10      // (0-15) 0=background
 
 int main(int argc, char *argv[]) {
     const char *hostname = NULL;   // Will use default if not set otherwise.

@@ -64,6 +64,7 @@ $ ./random-dots
 4. plasma - this version uses anti-aliasing to reduce jitter
 5. blur - burred simulated sound waves or rectangles
 6. lines
+7. hack - rotating letters + blur effect
 
 
 _____
