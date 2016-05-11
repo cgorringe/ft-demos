@@ -13,6 +13,7 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 ![](img/blur_wave.jpg) 
 ![](img/blur_pong.jpg) 
 ![](img/hack.jpg) 
+![](img/fractal.jpg) 
 
 
 ### Install How-to
@@ -66,6 +67,7 @@ $ ./random-dots
 5. blur - burred simulated sound waves or rectangles
 6. lines
 7. hack - rotating letters + blur effect
+8. fractal - zooming Mandelbrot fractal
 
 
 _____

@@ -45,7 +45,7 @@
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-#define Z_LAYER 8      // (0-15) 0=background
+#define Z_LAYER 15      // (0-15) 0=background
 #define DELAY 10  // 200
 #define SKIP_NUM 5            // width or height of crate
 
