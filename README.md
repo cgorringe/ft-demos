@@ -13,7 +13,8 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 ![](img/blur_wave.jpg) 
 ![](img/blur_pong.jpg) 
 ![](img/hack.jpg) 
-![](img/fractal.jpg) 
+![](img/fractal1.jpg) 
+![](img/fractal2.jpg) 
 
 
 ### Install How-to
