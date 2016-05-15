@@ -146,12 +146,12 @@ int main(int argc, char *argv[]) {
         hostname = argv[1];        // hostname can be supplied as first arg
     }
 
-    const int scale = 11;  // Sub-pixel antialising in each direction.
+    // We create a supersampling of our two-dimensional lookup-table. We
+    // trade memory for CPU here.
+    const int lookup_quant = 40;
+
     const int width = DISPLAY_WIDTH;
     const int height = DISPLAY_HEIGHT;
-    const int scaled_width = width * scale;
-    const int scaled_height = height * scale;
-    const int average_core_count = scale * scale;
 
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(hostname);
@@ -162,29 +162,33 @@ int main(int argc, char *argv[]) {
     Color palette[256];
 
     // Value for pixels buffer
-    Buffer2D<float> pixels(scaled_width, scaled_height);
+    Buffer2D<float> pixels(width, height);
 
     // Our plasma needs to cover double the area as we only look at
     // a window of it which we shift around.
-    Buffer2D<float> plasma1(scaled_width * 2, scaled_height * 2);
-    Buffer2D<float> plasma2(scaled_width * 2, scaled_height * 2);
-    const int center_x = scaled_width;   // For our circular calculations.
-    const int center_y = scaled_height;
+    // This is essentially a two-dimensional lookup-table.
+    Buffer2D<float> plasma1(lookup_quant * width * 2, lookup_quant * height * 2);
+    Buffer2D<float> plasma2(lookup_quant * width * 2, lookup_quant * height * 2);
+    const int center_x = lookup_quant * width;  // For our circular calcs.
+    const int center_y = lookup_quant * height;
     for (int y=0; y < plasma1.height(); y++) {
         for (int x=0; x < plasma1.width(); x++) {
             plasma1.At(x, y) = sin(sqrt((center_y-y)*(center_y-y) +
                                         (center_x-x)*(center_x-x))
-                                   / (4 * scale));
-            plasma2.At(x, y) = 
-                sin((4.0 * x / scale)/(37.0 + 15.0 * cos(y / (18.5 * scale)))) *
-                cos((4.0 * y / scale)/(31.0 + 11.0 * sin(x / (14.25 * scale))) );
+                                   / (4 * lookup_quant));
+            plasma2.At(x, y)
+                = sin((4.0 * x / lookup_quant) / (37.0 + 15.0 * cos(y / (18.5 * lookup_quant))))
+                * cos((4.0 * y / lookup_quant) / (31.0 + 11.0 * sin(x / (14.25 * lookup_quant))) );
         }
     }
 
-    float slowness = 10;
+    const float slowness = 10;
     int x1, y1, x2, y2, x3, y3;
-    int hw = (scaled_width >> 1);
-    int hh = (scaled_height >> 1);
+
+    // We slide a window of half the size within our plasma templates.
+    const int hw = lookup_quant * width / 2;
+    const int hh = lookup_quant * height / 2;
+
     int count = 0;
     int curPalette = 0;
 
@@ -196,7 +200,7 @@ int main(int argc, char *argv[]) {
             if (curPalette > PALETTE_MAX) { curPalette = 0; }
         }
 
-        // move plasma with sine functions
+        // Move plasma with sine functions
         x1 = hw + roundf(hw * cosf( count /  97.0f / slowness ));
         x2 = hw + roundf(hw * sinf(-count / 114.0f / slowness ));
         x3 = hw + roundf(hw * sinf(-count / 137.0f / slowness ));
@@ -209,28 +213,23 @@ int main(int argc, char *argv[]) {
         float higest_value = -100;
 
         // Write plasma to pixel buffer, still as float. Keep track of range.
-        for (int y=0; y < scaled_height; y++) {
-            for (int x=0; x < scaled_width; x++) {
-                const float value = plasma1.At(x1+x, y1+y)
-                    + plasma2.At(x2+x, y2+y) + plasma2.At(x3+x, y3+y);
+        for (int y=0; y < height; y++) {
+            for (int x=0; x < width; x++) {
+                const float value
+                    = plasma1.At(x1+lookup_quant*x, y1+lookup_quant*y)
+                    + plasma2.At(x2+lookup_quant*x, y2+lookup_quant*y)
+                    + plasma2.At(x3+lookup_quant*x, y3+lookup_quant*y);
                 if (value < lowest_value) lowest_value = value;
                 if (value > higest_value) higest_value = value;
                 pixels.At(x, y) = value;
             }
         }
 
-        // Copy pixel buffer to canvas
+        // Copy pixel buffer to canvas, lookup_quantd accordingly.
         const float value_range = higest_value - lowest_value;
         for (int y=0; y < height; y++) {
             for (int x=0; x < width; x++) {
-                // Subsampling: averaging the values we get over the range.
-                float value = 0;
-                for (int sy = 0; sy < scale; ++sy) {
-                    for (int sx = 0; sx < scale; ++sx) {
-                        value += pixels.At(scale * x + sx, scale * y + sy);
-                    }
-                }
-                value /= average_core_count;
+                float value = pixels.At(x, y);
                 // Normalize to [0..1]
                 const float normalized = (value - lowest_value) / value_range;
                 const uint8_t palette_entry = round(normalized * 255);
