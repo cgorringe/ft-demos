@@ -39,12 +39,37 @@
 
 #include "udp-flaschen-taschen.h"
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <math.h>
 #include <limits.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <unistd.h>
+
+namespace {
+// A two-dimensional array, essentially. A bit easier to use than manually
+// calculating array positions.
+template <class T> class Buffer2D {
+public:
+    Buffer2D(int width, int height) : width_(width), height_(height),
+                                      screen_(new T [ width * height]) {
+        bzero(screen_, width * height * sizeof(T));
+    }
+
+    ~Buffer2D() { delete [] screen_; }
+
+    inline int width() const { return width_; }
+    inline int height() const { return height_; }
+
+    T &At(int x, int y) { return screen_[y * width_ + x]; }
+
+private:
+    const int width_;
+    const int height_;
+    T *const screen_;
+};
+}  // namespace
 
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
@@ -121,11 +146,12 @@ int main(int argc, char *argv[]) {
         hostname = argv[1];        // hostname can be supplied as first arg
     }
 
-    int scale = 4;
-    int width = DISPLAY_WIDTH;
-    int height = DISPLAY_HEIGHT;
-    int dwidth = width * scale;
-    int dheight = height * scale;
+    const int scale = 11;  // Sub-pixel antialising in each direction.
+    const int width = DISPLAY_WIDTH;
+    const int height = DISPLAY_HEIGHT;
+    const int scaled_width = width * scale;
+    const int scaled_height = height * scale;
+    const int average_core_count = scale * scale;
 
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(hostname);
@@ -134,39 +160,35 @@ int main(int argc, char *argv[]) {
 
     // set the color palette
     Color palette[256];
-    //setPalette(0);
 
-    // pixel buffer
-    uint8_t pixels[ dwidth * dheight ];
+    // Value for pixels buffer
+    Buffer2D<float> pixels(scaled_width, scaled_height);
 
-    // init precalculated plasma buffers
-    uint8_t plasma1[ dwidth * dheight * 4 ];
-    uint8_t plasma2[ dwidth * dheight * 4 ];
-    int dst = 0;
-    for (int y=0; y < (dheight * 2); y++) {
-        for (int x=0; x < (dwidth * 2); x++) {
-            // ** TODO: redo consts?? **
-            plasma1[dst] = (uint8_t)(64 + 63 * sin( sqrt( (double)((dheight-y)*(dheight-y)) 
-                                                          + ((dwidth-x)*(dwidth-x)) ) / 16 ));  // 5*scale
-//            plasma2[dst] = (uint8_t)(64 + 63 * sin( (double) x / (12 + 4.5 * cos((double) y / (19 * scale))) )
-//                                             * cos( (double) y / (10 + 3.5 * sin((double) x / (14 * scale))) ) );
-            plasma2[dst] = (uint8_t)(64 + 63 * sin( (double) x / (37 + 15 * cos((double) y / 74)) )
-                                             * cos( (double) y / (31 + 11 * sin((double) x / 57)) ) );
-            dst++;
+    // Our plasma needs to cover double the area as we only look at
+    // a window of it which we shift around.
+    Buffer2D<float> plasma1(scaled_width * 2, scaled_height * 2);
+    Buffer2D<float> plasma2(scaled_width * 2, scaled_height * 2);
+    const int center_x = scaled_width;   // For our circular calculations.
+    const int center_y = scaled_height;
+    for (int y=0; y < plasma1.height(); y++) {
+        for (int x=0; x < plasma1.width(); x++) {
+            plasma1.At(x, y) = sin(sqrt((center_y-y)*(center_y-y) +
+                                        (center_x-x)*(center_x-x))
+                                   / (4 * scale));
+            plasma2.At(x, y) = 
+                sin((4.0 * x / scale)/(37.0 + 15.0 * cos(y / (18.5 * scale)))) *
+                cos((4.0 * y / scale)/(31.0 + 11.0 * sin(x / (14.25 * scale))) );
         }
     }
 
-    //double foo = 3;   // for 1x
-    //double foo = 10;  // for 2x
-    double foo = 10;    // for 4x
-    int x1, y1, x2, y2, x3, y3, src1, src2, src3;
-    int hw = (dwidth >> 1);
-    int hh = (dheight >> 1);
+    float slowness = 10;
+    int x1, y1, x2, y2, x3, y3;
+    int hw = (scaled_width >> 1);
+    int hh = (scaled_height >> 1);
     int count = 0;
     int curPalette = 0;
 
     while (1) {
-
         // set new color palette
         if ((count % 2000) == 0) {
             setPalette(curPalette, palette);
@@ -175,94 +197,47 @@ int main(int argc, char *argv[]) {
         }
 
         // move plasma with sine functions
-        x1 = hw  + (int)(hw * cos( (double)  count /  97 / foo ));
-        x2 = hw  + (int)(hw * sin( (double) -count / 114 / foo ));
-        x3 = hw  + (int)(hw * sin( (double) -count / 137 / foo ));
-        y1 = hh + (int)(hh * sin( (double)  count / 123 / foo ));
-        y2 = hh + (int)(hh * cos( (double) -count /  75 / foo ));
-        y3 = hh + (int)(hh * cos( (double) -count / 108 / foo ));
-        src1 = y1 * dwidth * 2 + x1;
-        src2 = y2 * dwidth * 2 + x2;
-        src3 = y3 * dwidth * 2 + x3;
+        x1 = hw + roundf(hw * cosf( count /  97.0f / slowness ));
+        x2 = hw + roundf(hw * sinf(-count / 114.0f / slowness ));
+        x3 = hw + roundf(hw * sinf(-count / 137.0f / slowness ));
 
-        // write plasma to pixel buffer
-        dst = 0;
-        for (int y=0; y < dheight; y++) {
-            for (int x=0; x < dwidth; x++) {
-                // plot pixel as sum of plasma functions
-                pixels[dst] = (uint8_t)((plasma1[src1] + plasma2[src2] + plasma2[src3]) & 0xFF);
-                //pixels[dst] = (uint8_t)((plasma1[src1]) & 0xFF);
-                //pixels[dst] = (uint8_t)((plasma2[src2]) & 0xFF);
-                dst++; src1++; src2++; src3++;
+        y1 = hh + roundf(hh * sinf( count / 123.0f / slowness ));
+        y2 = hh + roundf(hh * cosf(-count /  75.0f / slowness ));
+        y3 = hh + roundf(hh * cosf(-count / 108.0f / slowness ));
+
+        float lowest_value = 100;   // Finding range below.
+        float higest_value = -100;
+
+        // Write plasma to pixel buffer, still as float. Keep track of range.
+        for (int y=0; y < scaled_height; y++) {
+            for (int x=0; x < scaled_width; x++) {
+                const float value = plasma1.At(x1+x, y1+y)
+                    + plasma2.At(x2+x, y2+y) + plasma2.At(x3+x, y3+y);
+                if (value < lowest_value) lowest_value = value;
+                if (value > higest_value) higest_value = value;
+                pixels.At(x, y) = value;
             }
-            // skip to next line in plasma buffers
-            src1 += dwidth; src2 += dwidth; src3 += dwidth;
         }
 
-        // copy pixel buffer to canvas
-        uint8_t dot_r, dot_g, dot_b;
-        int src = 0;
-        dst = 0;
+        // Copy pixel buffer to canvas
+        const float value_range = higest_value - lowest_value;
         for (int y=0; y < height; y++) {
             for (int x=0; x < width; x++) {
-                
-                // anti-alias by down-sampling (averaging) 4 pixels to 1
-
-                // TEST
-                /*
-                dot_r = palette[pixels[src]].r;
-                dot_g = palette[pixels[src]].g;
-                dot_b = palette[pixels[src]].b;
-                //*/
-
-              if (scale == 2) {
-                // subsample 2x2 pixels to 1
-                dot_r = ( palette[pixels[src]].r + palette[pixels[src + 1]].r 
-                        + palette[pixels[src + dwidth]].r + palette[pixels[src + dwidth + 1]].r ) >> 2;
-                dot_g = ( palette[pixels[src]].g + palette[pixels[src + 1]].g 
-                        + palette[pixels[src + dwidth]].g + palette[pixels[src + dwidth + 1]].g ) >> 2;
-                dot_b = ( palette[pixels[src]].b + palette[pixels[src + 1]].b 
-                        + palette[pixels[src + dwidth]].b + palette[pixels[src + dwidth + 1]].b ) >> 2;
-              }
-              else if (scale == 4) {
-                // subsample 4x4 pixels to 1
-                dot_r = ( palette[pixels[src + 0]].r + palette[pixels[src + 1]].r
-                        + palette[pixels[src + 2]].r + palette[pixels[src + 3]].r
-                        + palette[pixels[src + dwidth + 0]].r + palette[pixels[src + dwidth + 1]].r
-                        + palette[pixels[src + dwidth + 2]].r + palette[pixels[src + dwidth + 3]].r
-                        + palette[pixels[src + (dwidth * 2) + 0]].r + palette[pixels[src + (dwidth * 2) + 1]].r
-                        + palette[pixels[src + (dwidth * 2) + 2]].r + palette[pixels[src + (dwidth * 2) + 3]].r
-                        + palette[pixels[src + (dwidth * 3) + 0]].r + palette[pixels[src + (dwidth * 3) + 1]].r
-                        + palette[pixels[src + (dwidth * 3) + 2]].r + palette[pixels[src + (dwidth * 3) + 3]].r
-                        ) >> 4;
-                dot_g = ( palette[pixels[src + 0]].g + palette[pixels[src + 1]].g
-                        + palette[pixels[src + 2]].g + palette[pixels[src + 3]].g
-                        + palette[pixels[src + dwidth + 0]].g + palette[pixels[src + dwidth + 1]].g
-                        + palette[pixels[src + dwidth + 2]].g + palette[pixels[src + dwidth + 3]].g
-                        + palette[pixels[src + (dwidth * 2) + 0]].g + palette[pixels[src + (dwidth * 2) + 1]].g
-                        + palette[pixels[src + (dwidth * 2) + 2]].g + palette[pixels[src + (dwidth * 2) + 3]].g
-                        + palette[pixels[src + (dwidth * 3) + 0]].g + palette[pixels[src + (dwidth * 3) + 1]].g
-                        + palette[pixels[src + (dwidth * 3) + 2]].g + palette[pixels[src + (dwidth * 3) + 3]].g
-                        ) >> 4;
-                dot_b = ( palette[pixels[src + 0]].b + palette[pixels[src + 1]].b
-                        + palette[pixels[src + 2]].b + palette[pixels[src + 3]].b
-                        + palette[pixels[src + dwidth + 0]].b + palette[pixels[src + dwidth + 1]].b
-                        + palette[pixels[src + dwidth + 2]].b + palette[pixels[src + dwidth + 3]].b
-                        + palette[pixels[src + (dwidth * 2) + 0]].b + palette[pixels[src + (dwidth * 2) + 1]].b
-                        + palette[pixels[src + (dwidth * 2) + 2]].b + palette[pixels[src + (dwidth * 2) + 3]].b
-                        + palette[pixels[src + (dwidth * 3) + 0]].b + palette[pixels[src + (dwidth * 3) + 1]].b
-                        + palette[pixels[src + (dwidth * 3) + 2]].b + palette[pixels[src + (dwidth * 3) + 3]].b
-                        ) >> 4;
-              }
-
-                //canvas.SetPixel( x, y, palette[ pixels[dst] ] );
-                canvas.SetPixel( x, y, Color(dot_r, dot_g, dot_b) );
-                dst++; src += scale;
+                // Subsampling: averaging the values we get over the range.
+                float value = 0;
+                for (int sy = 0; sy < scale; ++sy) {
+                    for (int sx = 0; sx < scale; ++sx) {
+                        value += pixels.At(scale * x + sx, scale * y + sy);
+                    }
+                }
+                value /= average_core_count;
+                // Normalize to [0..1]
+                const float normalized = (value - lowest_value) / value_range;
+                const uint8_t palette_entry = round(normalized * 255);
+                canvas.SetPixel(x, y, Color(palette[palette_entry]));
             }
-            //src += dwidth;  // skip every other row (2x)
-            src += (dwidth * 2);  // skip every other row (4x)
         }
-
+        
         // send canvas
         canvas.SetOffset(0, 0, Z_LAYER);
         canvas.Send();
