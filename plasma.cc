@@ -45,6 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <time.h>
 #include <unistd.h>
 
 namespace {
@@ -148,7 +149,7 @@ int main(int argc, char *argv[]) {
 
     // We create a supersampling of our two-dimensional lookup-table. We
     // trade memory for CPU here.
-    const int lookup_quant = 40;
+    const int lookup_quant = 20;
 
     const int width = DISPLAY_WIDTH;
     const int height = DISPLAY_HEIGHT;
@@ -189,7 +190,10 @@ int main(int argc, char *argv[]) {
     const int hw = lookup_quant * width / 2;
     const int hh = lookup_quant * height / 2;
 
-    int count = 0;
+    srandom(time(NULL));
+    int count = random();   // Set to 0 for predictable start.
+    if (count < 0) count = -count;
+    setPalette(0, palette);
     int curPalette = 0;
 
     while (1) {
@@ -201,13 +205,13 @@ int main(int argc, char *argv[]) {
         }
 
         // Move plasma with sine functions
-        x1 = hw + roundf(hw * cosf( count /  97.0f / slowness ));
-        x2 = hw + roundf(hw * sinf(-count / 114.0f / slowness ));
-        x3 = hw + roundf(hw * sinf(-count / 137.0f / slowness ));
+        x1 = hw + round(hw * cos( count /  97.0 / slowness ));
+        x2 = hw + round(hw * sin(-count / 114.0 / slowness ));
+        x3 = hw + round(hw * sin(-count / 137.0 / slowness ));
 
-        y1 = hh + roundf(hh * sinf( count / 123.0f / slowness ));
-        y2 = hh + roundf(hh * cosf(-count /  75.0f / slowness ));
-        y3 = hh + roundf(hh * cosf(-count / 108.0f / slowness ));
+        y1 = hh + round(hh * sin( count / 123.0 / slowness ));
+        y2 = hh + round(hh * cos(-count /  75.0 / slowness ));
+        y3 = hh + round(hh * cos(-count / 108.0 / slowness ));
 
         float lowest_value = 100;   // Finding range below.
         float higest_value = -100;
