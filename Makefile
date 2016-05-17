@@ -10,7 +10,7 @@ MAGICK_LDFLAGS=`GraphicsMagick++-config --ldflags --libs`
 
 FFMPEG_LDFLAGS=`pkg-config --cflags --libs  libavcodec libavformat libswscale libavutil`
 
-ALL=simple-example simple-animation random-dots quilt black plasma-old plasma nb-logo blur lines hack fractal midi kbd2midi words
+ALL=simple-example simple-animation random-dots quilt black plasma1 plasma2 plasma nb-logo blur lines hack fractal midi kbd2midi words
 
 all : $(ALL)
 
@@ -19,7 +19,8 @@ simple-animation: simple-animation.cc $(OBJECTS)
 random-dots: random-dots.cc $(OBJECTS)
 quilt: quilt.cc $(OBJECTS)
 black: black.cc $(OBJECTS)
-plasma-old: plasma-old.cc $(OBJECTS)
+plasma1: plasma1.cc $(OBJECTS)
+plasma2: plasma2.cc $(OBJECTS)
 plasma: plasma.cc $(OBJECTS)
 nb-logo: nb-logo.cc $(OBJECTS)
 blur: blur.cc $(OBJECTS)
