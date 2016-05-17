@@ -21,6 +21,13 @@
 //  ./midi
 //
 // --------------------------------------------------------------------------------
+
+// ------------------------------------------------
+// square 8x5 thing we have:
+// 8 horizontal buttons correspond to channel 0..7
+// 5 vertical buttons correspond to note 0x35..0x39
+// ------------------------------------------------
+
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,6 +51,7 @@
 #include <limits.h>
 // #include <math.h>
 #include <time.h>
+#include <sys/select.h>
 
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
@@ -91,20 +99,24 @@ void drawNotes(uint8_t notes[], UDPFlaschenTaschen &canvas) {
 
     for (int x=0; x < width; x++) {
         v = notes[i] * 2;
-        color = Color(0, v, 0);  // TODO
+        color = Color(0, v, 0);  // TODO (from channel?)
         canvas.SetPixel(x, height-1, color);
         i++;
     }
 }
 
 // note = 0 to 127
-void noteOn(uint8_t note, uint8_t velocity, uint8_t notes[]) {
+void noteOn(uint8_t note, uint8_t velocity, uint8_t channel, uint8_t notes[]) {
     //notes[note] = velocity;
-    notes[note & 0x7F] = 127;
+    fprintf(stderr, "ON : ch=%x note=0x%02X velocity=0x%02X\n",
+            channel, note, velocity);
+    notes[note & 0x7F] = 127;  // TODO: encode channel
 }
 
-void noteOff(uint8_t note, uint8_t velocity, uint8_t notes[]) {
-    notes[note & 0x7F] = 0;
+void noteOff(uint8_t note, uint8_t velocity, uint8_t channel, uint8_t notes[]) {
+    fprintf(stderr, "OFF: ch=%x note=0x%02X velocity=0x%02X\n",
+            channel, note, velocity);
+    notes[note & 0x7F] = 0;  // TODO: encode channel.
 }
 
 void clearNotes(uint8_t notes[]) {
@@ -113,30 +125,48 @@ void clearNotes(uint8_t notes[]) {
 
 
 // reads and parses raw midi bytes from stream, then updates notes[]
-void readMidi(FILE *stream, uint8_t notes[]) {
+void readMidi(int fd, uint8_t notes[], int timeout_ms) {
     
     uint8_t cmd_byte=0, data1_byte, data2_byte;
 
-    // while stream not empty, read a byte at a time
-    // (only works if enter key pressed???)
+    fd_set rfds;
+    struct timeval tv;
 
-    while( fread( &cmd_byte, 1, 1, stream ) ) {
+    FD_ZERO(&rfds);
+    FD_SET(fd, &rfds);
+    tv.tv_sec = 0;
+    tv.tv_usec = 1000 * timeout_ms;
+
+    for (;;) {
+        FD_SET(fd, &rfds);
+        // Here, we are using the linux feature to update the remaining
+        // time. Not really portable, we should really adapt the remaining
+        // timeout to whatever we have.
+        const int sel = select(fd + 1, &rfds, NULL, NULL, &tv);
+        if (sel == 0)
+            return;  // time-slice is up.
+
+        if (sel < 0) {
+            perror("Error on filedescriptor");
+            exit(0);
+        }
+
+        if (read(fd, &cmd_byte, 1) != 1)
+            continue;
+
+        const uint8_t channel = cmd_byte & 0x0f;
         
-        //cmd_byte = 0x80; // TEST
-        fprintf(stderr, "%X ", cmd_byte);  // DEBUG TEST
-
         switch (cmd_byte & 0xF0) {
-
         case 0x80: // Note Off
-            data1_byte = 60;  // note
-            data2_byte = 64;  // velocity
-            noteOff(data1_byte, data2_byte, notes);
+            if (read(fd, &data1_byte, 1) == 0) return;  // note
+            if (read(fd, &data2_byte, 1) == 0) return;  // velocity
+            noteOff(data1_byte, data2_byte, channel, notes);
             break;
 
         case 0x90: // Note On
-            data1_byte = 60;  // note
-            data2_byte = 64;  // velocity
-            noteOn(data1_byte, data2_byte, notes);
+            if (read(fd, &data1_byte, 1) == 0) return;  // note
+            if (read(fd, &data2_byte, 1) == 0) return;  // velocity
+            noteOn(data1_byte, data2_byte, channel, notes);
             break;
         }
 
@@ -156,8 +186,8 @@ void test1(uint8_t notes[]) {
     static uint8_t old_note=0, new_note=60;
     static int dir=1;
 
-    noteOff(old_note, 0, notes);
-    noteOn(new_note, 127, notes);
+    noteOff(old_note, 0, 1, notes);
+    noteOn(new_note, 127, 1, notes);
 
     old_note = new_note;
     new_note += dir;
@@ -169,8 +199,8 @@ void test2(uint8_t notes[]) {
 
     static uint8_t old_note=0;
     uint8_t new_note = randomInt(50, 70);
-    noteOff(old_note, 0, notes);
-    noteOn(new_note, 127, notes);
+    noteOff(old_note, 0, 1, notes);
+    noteOn(new_note, 127, 1, notes);
     old_note = new_note;
 }
 
@@ -199,9 +229,9 @@ int main(int argc, char *argv[]) {
 
     while (1) {
 
-        if (count % 3 == 0) { test2(notes); }  // TEST
+        //if (count % 3 == 0) { test2(notes); }  // TEST
 
-        //readMidi(stdin, notes);
+        readMidi(STDIN_FILENO, notes, DELAY);
 
         scrollUp(canvas);
         drawNotes(notes, canvas);
@@ -209,7 +239,6 @@ int main(int argc, char *argv[]) {
         // send canvas
         canvas.SetOffset(0, 0, Z_LAYER);
         canvas.Send();
-        usleep(DELAY * 1000);
 
         count++;
         if (count == INT_MAX) { count=0; }
