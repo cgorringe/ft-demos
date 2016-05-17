@@ -16,12 +16,12 @@
 // different display (e.g. a local terminal display)
 // pass the hostname as parameter:
 //
-//  ./lines localhost
+//  ./lines -h localhost one
 //
 // or set the environment variable FT_DISPLAY to not worry about it
 //
 //  export FT_DISPLAY=localhost
-//  ./lines
+//  ./lines one
 //
 // --------------------------------------------------------------------------------
 //
@@ -49,6 +49,7 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
+#include <string>
 
 // Defaults
 //                               large  small
@@ -62,7 +63,7 @@
 #define SKIP_MIN 1
 #define SKIP_MAX 3
 #define LINE_ALGO 1  // 0=dots, 1=plain line, 2=anti-aliased line
-#define DRAW_FOUR 0  // 0=one line, 1=four lines
+#define DRAW_NUM 1   // 1, 2, or 4 lines
 
 #define TRUE 1
 #define FALSE 0
@@ -76,6 +77,7 @@ struct Line {
     int y2;
 };
 
+// global vars
 Line lines[MAX_LINES];
 int lines_idx;
 
@@ -84,34 +86,114 @@ const char *opt_hostname = NULL;
 int opt_width  = DISPLAY_WIDTH;
 int opt_height = DISPLAY_HEIGHT;
 int opt_layer  = Z_LAYER;
-int opt_timeout = -1;
-int opt_draw_four = DRAW_FOUR;  // 0=one line, 1=four lines
+double opt_timeout = 60*60*24;  // timeout in 24 hrs
+int opt_draw_num = DRAW_NUM;    // 1, 2, or 4 lines
 int opt_line_algo = LINE_ALGO;  // 0=dots, 1=plain line, 2=anti-aliased line
 int opt_num_lines = NUM_LINES;
 int opt_delay = DELAY;
+int opt_skip_min = SKIP_MIN;
+int opt_skip_max = SKIP_MAX;
+
+volatile bool interrupt_received = false;
+static void InterruptHandler(int signo) {
+    interrupt_received = true;
+}
+
+// ------------------------------------------------------------------------------------------
+// Command Line Options
+
+void usage(const char *progname) {
+
+    fprintf(stderr, "Lines (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
+    fprintf(stderr, "Usage: %s [options] {one|two|four} \n", progname);
+    fprintf(stderr, "Options:\n"
+        "\t-l <layer>     : Layer 0-15. (default 3)\n"
+        "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
+        "\t-g <W>x<H>     : Output geometry. (default 45x35)\n"
+        "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
+        "\t-d <delay>     : Delay between frames in milliseconds. (default 50)\n"
+        "\t-a             : Anti-alias the lines.\n"
+        "\t-n <number>    : Number of lines. (default 6)\n"
+        "\t-s <min>,<max> : Skip min,max points. (default 1,3)\n"
+    );
+    exit(1);
+}
+
+void cmdLine(int argc, char *argv[]) {
+
+    // command line options
+    int opt;
+    while ((opt = getopt(argc, argv, "l:t:g:h:d:an:s:")) != -1) {
+        switch (opt) {
+        case 'l':  // layer
+            if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
+                fprintf(stderr, "Invalid layer '%s'\n", optarg);
+                usage(argv[0]);
+            }
+            break;
+        case 't':  // timeout
+            if (sscanf(optarg, "%lf", &opt_timeout) != 1 || opt_timeout < 0) {
+                fprintf(stderr, "Invalid timeout '%s'\n", optarg);
+                usage(argv[0]);
+            }
+            break;
+        case 'g':  // geometry
+            if (sscanf(optarg, "%dx%d", &opt_width, &opt_height) < 2) {
+                fprintf(stderr, "Invalid size '%s'\n", optarg);
+                usage(argv[0]);
+            }
+            break;
+        case 'h':  // hostname
+            opt_hostname = strdup(optarg); // leaking. Ignore.
+            break;
+        case 'd':  // delay
+            if (sscanf(optarg, "%d", &opt_delay) != 1 || opt_delay < 1) {
+                fprintf(stderr, "Invalid delay '%s'\n", optarg);
+                usage(argv[0]);
+            }
+            break;
+        case 'a':  // anti-aliased lines
+            opt_line_algo = 2;
+            break;
+        case 'n':  // number of lines
+            if (sscanf(optarg, "%d", &opt_num_lines) != 1 || opt_num_lines < 1 || opt_num_lines > MAX_LINES) {
+                fprintf(stderr, "Invalid number of lines '%s'\n", optarg);
+                usage(argv[0]);
+            }
+            break;
+        case 's':  // skip min,max points
+            if (sscanf(optarg, "%d,%d", &opt_skip_min, &opt_skip_max) < 2 || opt_skip_min < 1 || opt_skip_max < opt_skip_min) {
+                fprintf(stderr, "Invalid skip values '%s'\n", optarg);
+                usage(argv[0]);
+            }
+            break;
+        default:
+            usage(argv[0]);
+        }
+    }
+
+    // retrieve arg text
+    const char *text = argv[optind];
+    if (text && strncmp(text, "one", 3) == 0) {
+        opt_draw_num = 1;
+    }
+    else if (text && strncmp(text, "two", 3) == 0) {
+        opt_draw_num = 2;
+    }
+    else if (text && strncmp(text, "four", 4) == 0) {
+        opt_draw_num = 4;
+    }
+    else {
+        fprintf(stderr, "Missing 'one', 'two', or 'four'\n");
+        usage(argv[0]);
+    }
+}
 
 // ------------------------------------------------------------------------------------------
 
-int usage(const char *progname) {
-    fprintf(stderr, "lines (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
-    fprintf(stderr, "Usage: %s [options]\n", progname);
-    fprintf(stderr, "Options:\n"
-      "\t-l <layer>   : Layer 0-15. Default 3.\n"
-      "\t-t <timeout> : Timeout exits after given seconds. Default runs indefinitely.\n"
-      "\t-g <W>x<H>   : Output geometry. Default 45x35\n"
-      "\t-h <host>    : Flaschen-Taschen display hostname.\n"
-      "\t-d <delay>   : Delay between frames in milliseconds.\n"
-      "\t-4           : Draw four lines.\n"
-      "\t-a           : Anti-alias the lines.\n"
-      "\t-n <number>  : Set number of lines. Default 6.\n"
-      );
-    return 1;
-}
-
 // random int in range min to max inclusive
 int randomInt(int min, int max) {
-  //return (arc4random_uniform(max - min + 1) + min);
-  return (random() % (max - min + 1) + min);
+    return (random() % (max - min + 1) + min);
 }
 
 // draw endpoints of line
@@ -280,7 +362,6 @@ void drawLine2(int x1, int y1, int x2, int y2, const Color &color, UDPFlaschenTa
   }
 }
 
-
 // ------------------------------------------------------------------------------------------
 
 void drawLine(int x1, int y1, int x2, int y2, const Color &color, UDPFlaschenTaschen &canvas) {
@@ -345,10 +426,10 @@ Line nextLine(int reset) {
     lines[lines_idx].y2 = randomInt(1, opt_height - 2);
 
     // random skip values
-    skip.x1 = (randomInt(0, 1)) ? randomInt(SKIP_MIN, SKIP_MAX) : -randomInt(SKIP_MIN, SKIP_MAX);
-    skip.y1 = (randomInt(0, 1)) ? randomInt(SKIP_MIN, SKIP_MAX) : -randomInt(SKIP_MIN, SKIP_MAX);
-    skip.x2 = (randomInt(0, 1)) ? randomInt(SKIP_MIN, SKIP_MAX) : -randomInt(SKIP_MIN, SKIP_MAX);
-    skip.y2 = (randomInt(0, 1)) ? randomInt(SKIP_MIN, SKIP_MAX) : -randomInt(SKIP_MIN, SKIP_MAX);
+    skip.x1 = (randomInt(0, 1)) ? randomInt(opt_skip_min, opt_skip_max) : -randomInt(opt_skip_min, opt_skip_max);
+    skip.y1 = (randomInt(0, 1)) ? randomInt(opt_skip_min, opt_skip_max) : -randomInt(opt_skip_min, opt_skip_max);
+    skip.x2 = (randomInt(0, 1)) ? randomInt(opt_skip_min, opt_skip_max) : -randomInt(opt_skip_min, opt_skip_max);
+    skip.y2 = (randomInt(0, 1)) ? randomInt(opt_skip_min, opt_skip_max) : -randomInt(opt_skip_min, opt_skip_max);
   }
   else {
     // move the line
@@ -358,14 +439,14 @@ Line nextLine(int reset) {
     lines[lines_idx].y2 = lines[old_idx].y2 + skip.y2;
 
     // reverse direction of step values of points that hit border
-    if (lines[lines_idx].x1 <= 0)          { skip.x1 = randomInt(SKIP_MIN, SKIP_MAX);      }
-    if (lines[lines_idx].x1 >= opt_width)  { skip.x1 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
-    if (lines[lines_idx].y1 <= 0)          { skip.y1 = randomInt(SKIP_MIN, SKIP_MAX);      }
-    if (lines[lines_idx].y1 >= opt_height) { skip.y1 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
-    if (lines[lines_idx].x2 <= 0)          { skip.x2 = randomInt(SKIP_MIN, SKIP_MAX);      }
-    if (lines[lines_idx].x2 >= opt_width)  { skip.x2 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
-    if (lines[lines_idx].y2 <= 0)          { skip.y2 = randomInt(SKIP_MIN, SKIP_MAX);      }
-    if (lines[lines_idx].y2 >= opt_height) { skip.y2 = randomInt(SKIP_MIN, SKIP_MAX) * -1; }
+    if (lines[lines_idx].x1 <= 0)          { skip.x1 = randomInt(opt_skip_min, opt_skip_max);      }
+    if (lines[lines_idx].x1 >= opt_width)  { skip.x1 = randomInt(opt_skip_min, opt_skip_max) * -1; }
+    if (lines[lines_idx].y1 <= 0)          { skip.y1 = randomInt(opt_skip_min, opt_skip_max);      }
+    if (lines[lines_idx].y1 >= opt_height) { skip.y1 = randomInt(opt_skip_min, opt_skip_max) * -1; }
+    if (lines[lines_idx].x2 <= 0)          { skip.x2 = randomInt(opt_skip_min, opt_skip_max);      }
+    if (lines[lines_idx].x2 >= opt_width)  { skip.x2 = randomInt(opt_skip_min, opt_skip_max) * -1; }
+    if (lines[lines_idx].y2 <= 0)          { skip.y2 = randomInt(opt_skip_min, opt_skip_max);      }
+    if (lines[lines_idx].y2 >= opt_height) { skip.y2 = randomInt(opt_skip_min, opt_skip_max) * -1; }
   }
   return lines[lines_idx];
 }
@@ -377,83 +458,51 @@ Line lastLine() {
   return lines[last_idx];
 }
 
-void drawFourLines(const Line &line, const Color &color, UDPFlaschenTaschen &canvas) {
+void drawAllLines(const Line &line, const Color &color, UDPFlaschenTaschen &canvas) {
 
     drawLine( line.x1, line.y1, line.x2, line.y2, color, canvas);
-    if (opt_draw_four) {
-        drawLine( opt_width - line.x1, line.y1, opt_width - line.x2, line.y2, color, canvas);
-        drawLine( line.x1, opt_height - line.y1, line.x2, opt_height - line.y2, color, canvas);
+    if (opt_draw_num >= 2) {
         drawLine( opt_width - line.x1, opt_height - line.y1, 
                   opt_width - line.x2, opt_height - line.y2, color, canvas);
     }
+    if (opt_draw_num == 4) {
+        drawLine( opt_width - line.x1, line.y1, opt_width - line.x2, line.y2, color, canvas);
+        drawLine( line.x1, opt_height - line.y1, line.x2, opt_height - line.y2, color, canvas);
+    }
 }
 
+// ------------------------------------------------------------------------------------------
 
 int main(int argc, char *argv[]) {
 
+    cmdLine(argc, argv);
     srandom(time(NULL)); // seed the random generator
-
-    // command line options
-    int opt;
-    while ((opt = getopt(argc, argv, "l:t:g:h:4an:")) != -1) {
-        switch (opt) {
-        case 'l':  // layer
-            if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
-                fprintf(stderr, "Invalid layer '%s'\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 't':  // timeout
-            if (sscanf(optarg, "%d", &opt_timeout) != 1 || opt_timeout < 0) {
-                fprintf(stderr, "Invalid timeout '%s'\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 'g':  // geometry
-            if (sscanf(optarg, "%dx%d", &opt_width, &opt_height) < 2) {
-                fprintf(stderr, "Invalid size spec '%s'", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 'h':  // hostname
-            opt_hostname = strdup(optarg); // leaking. Ignore.
-            break;
-        case '4':  // four lines
-            opt_draw_four = 1;
-            break;
-        case 'a':  // anti-aliased lines
-            opt_line_algo = 2;
-            break;
-        case 'n':  // number of lines
-            if (sscanf(optarg, "%d", &opt_num_lines) != 1 || opt_num_lines < 1 || opt_num_lines > MAX_LINES) {
-                fprintf(stderr, "Invalid number '%s'\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        default:
-            return usage(argv[0]);
-        }
-    }
 
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(opt_hostname);
     UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
     canvas.Clear();
 
+    // handle break
+    signal(SIGTERM, InterruptHandler);
+    signal(SIGINT, InterruptHandler);
+
+    // init vars
     lines_idx = 0;
     Color transparent = Color(0, 0, 0);
     Color color = nextColor(TRUE);
     Line line = nextLine(TRUE);
     int count = 0;
+    time_t starttime = time(NULL);
 
-    while (TRUE) {
+    do {
         // erase last line
-        drawFourLines(lastLine(), transparent, canvas);
+        drawAllLines(lastLine(), transparent, canvas);
 
         // draw colored line
         color = nextColor(FALSE);
         line = nextLine(FALSE);
-        drawFourLines(line, color, canvas);
+        drawAllLines(line, color, canvas);
 
         // send canvas
         canvas.SetOffset(0, 0, opt_layer);
@@ -462,5 +511,10 @@ int main(int argc, char *argv[]) {
 
         count++;
         if (count == INT_MAX) { count=0; }
-    }
+
+    } while ( (difftime(time(NULL), starttime) <= opt_timeout) && !interrupt_received );
+
+    // clear canvas on exit
+    canvas.Clear();
+    canvas.Send();
 }
