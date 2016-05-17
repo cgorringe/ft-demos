@@ -76,7 +76,10 @@ private:
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 1      // (0-15) 0=background
-#define DELAY 10
+
+#define DELAY 25              // Wait in ms. Determines frame rate.
+#define MOVE_SLOWNESS 100.0   // Slowness of move. More for slow.
+
 #define PALETTE_MAX 4  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB
 
 void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, int b2, Color palette[]) {
@@ -183,7 +186,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    const float slowness = 10;
+    const float slowness = MOVE_SLOWNESS / DELAY;
     int x1, y1, x2, y2, x3, y3;
 
     // We slide a window of half the size within our plasma templates.
