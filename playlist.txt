@@ -1,6 +1,4 @@
-1.0 plasma2
-0.5 nb-logo
-0.5 quilt
-1.0 lines
-1.0 blur
-0.5 random-dots
+0.0 1.0 plasma
+0.5 1.5 nb-logo
+1.0 2.0 fractal
+2.0 3.0 blur
