@@ -60,6 +60,7 @@ int opt_layer  = Z_LAYER;
 double opt_timeout = 0;  // timeout now
 int opt_width  = DISPLAY_WIDTH;
 int opt_height = DISPLAY_HEIGHT;
+int opt_xoff=0, opt_yoff=0;
 bool opt_black = false;
 bool opt_all = false;
 bool opt_fill = false;
@@ -70,9 +71,9 @@ int usage(const char *progname) {
     fprintf(stderr, "Black (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
     fprintf(stderr, "Usage: %s [options] [all]\n", progname);
     fprintf(stderr, "Options:\n"
+        "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
         "\t-l <layer>     : Layer 0-15. (default 0)\n"
         "\t-t <timeout>   : Timeout exits after given seconds. (default now)\n"
-        "\t-g <W>x<H>     : Output geometry. (default 45x35)\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
         "\t-b             : Black out with color (1,1,1)\n"
         "\t-c <RRGGBB>    : Fill with color as hex\n"
@@ -90,6 +91,12 @@ int cmdLine(int argc, char *argv[]) {
         case '?':  // help
             return usage(argv[0]);
             break;
+        case 'g':  // geometry
+            if (sscanf(optarg, "%dx%d%d%d", &opt_width, &opt_height, &opt_xoff, &opt_yoff) < 2) {
+                fprintf(stderr, "Invalid size '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
         case 'l':  // layer
             if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
                 fprintf(stderr, "Invalid layer '%s'\n", optarg);
@@ -99,12 +106,6 @@ int cmdLine(int argc, char *argv[]) {
         case 't':  // timeout
             if (sscanf(optarg, "%lf", &opt_timeout) != 1 || opt_timeout < 0) {
                 fprintf(stderr, "Invalid timeout '%s'\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 'g':  // geometry
-            if (sscanf(optarg, "%dx%d", &opt_width, &opt_height) < 2) {
-                fprintf(stderr, "Invalid size '%s'\n", optarg);
                 return usage(argv[0]);
             }
             break;
@@ -169,13 +170,13 @@ int main(int argc, char *argv[]) {
         if (opt_all) {
             // clear ALL layers
             for (int i=0; i <= 15; i++) {
-                canvas.SetOffset(0, 0, i);
+                canvas.SetOffset(opt_xoff, opt_yoff, i);
                 canvas.Send();
             }
         }
         else {
             // clear single layer
-            canvas.SetOffset(0, 0, opt_layer);
+            canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
             canvas.Send();
         }
 

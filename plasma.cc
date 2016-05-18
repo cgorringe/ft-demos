@@ -101,6 +101,7 @@ int opt_layer  = Z_LAYER;
 double opt_timeout = 60*60*24;  // timeout in 24 hrs
 int opt_width  = DISPLAY_WIDTH;
 int opt_height = DISPLAY_HEIGHT;
+int opt_xoff=0, opt_yoff=0;
 int opt_delay  = DELAY;
 int opt_palette = -1;  // default cycles
 
@@ -109,9 +110,9 @@ int usage(const char *progname) {
     fprintf(stderr, "Plasma (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
     fprintf(stderr, "Usage: %s [options]\n", progname);
     fprintf(stderr, "Options:\n"
+        "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
         "\t-l <layer>     : Layer 0-15. (default 1)\n"
         "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
-        "\t-g <W>x<H>     : Output geometry. (default 45x35)\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
         "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
         "\t-p <palette>   : Set color palette to: (default cycles)\n"
@@ -129,6 +130,12 @@ int cmdLine(int argc, char *argv[]) {
         case '?':  // help
             return usage(argv[0]);
             break;
+        case 'g':  // geometry
+            if (sscanf(optarg, "%dx%d%d%d", &opt_width, &opt_height, &opt_xoff, &opt_yoff) < 2) {
+                fprintf(stderr, "Invalid size '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
         case 'l':  // layer
             if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
                 fprintf(stderr, "Invalid layer '%s'\n", optarg);
@@ -138,12 +145,6 @@ int cmdLine(int argc, char *argv[]) {
         case 't':  // timeout
             if (sscanf(optarg, "%lf", &opt_timeout) != 1 || opt_timeout < 0) {
                 fprintf(stderr, "Invalid timeout '%s'\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 'g':  // geometry
-            if (sscanf(optarg, "%dx%d", &opt_width, &opt_height) < 2) {
-                fprintf(stderr, "Invalid size '%s'\n", optarg);
                 return usage(argv[0]);
             }
             break;
@@ -243,9 +244,6 @@ int main(int argc, char *argv[]) {
     // trade memory for CPU here.
     const int lookup_quant = 20;
 
-    //const int width = DISPLAY_WIDTH;
-    //const int height = DISPLAY_HEIGHT;
-
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(opt_hostname);
     UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
@@ -341,7 +339,7 @@ int main(int argc, char *argv[]) {
         }
         
         // send canvas
-        canvas.SetOffset(0, 0, opt_layer);
+        canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
         canvas.Send();
         usleep(opt_delay * 1000);
 
