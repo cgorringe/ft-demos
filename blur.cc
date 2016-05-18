@@ -10,9 +10,9 @@
 // How to run:
 //
 // To see command line options:
-//  ./plasma -?
-//  ./plasma bolt
-//  ./plasma boxes
+//  ./blur -?
+//  ./blur bolt
+//  ./blur boxes
 //
 // By default, connects to the installation at Noisebridge. If using a
 // different display (e.g. a local terminal display)
