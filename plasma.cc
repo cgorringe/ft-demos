@@ -11,6 +11,9 @@
 //
 // How to run:
 //
+// To see command line options:
+//  ./plasma -?
+//
 // By default, connects to the installation at Noisebridge. If using a
 // different display (e.g. a local terminal display)
 // pass the hostname as parameter:
@@ -121,8 +124,11 @@ int cmdLine(int argc, char *argv[]) {
 
     // command line options
     int opt;
-    while ((opt = getopt(argc, argv, "l:t:g:h:d:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "?l:t:g:h:d:p:")) != -1) {
         switch (opt) {
+        case '?':  // help
+            return usage(argv[0]);
+            break;
         case 'l':  // layer
             if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
                 fprintf(stderr, "Invalid layer '%s'\n", optarg);
