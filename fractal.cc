@@ -11,11 +11,14 @@
 //
 // How to run:
 //
+// To see command line options:
+//  ./plasma -?
+//
 // By default, connects to the installation at Noisebridge. If using a
 // different display (e.g. a local terminal display)
 // pass the hostname as parameter:
 //
-//  ./fractal localhost
+//  ./fractal -h localhost
 //
 // or set the environment variable FT_DISPLAY to not worry about it
 //
@@ -39,6 +42,7 @@
 
 #include "udp-flaschen-taschen.h"
 
+#include <getopt.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -47,25 +51,97 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <string>
 
-//                               large  small
+// Defaults                      large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 1       // (0-15) 0=background
 #define DELAY 20
 
-
 // define the point in the complex plane to which we will zoom into
 #define POINT_OR  -0.577816-9.31323E-10-1.16415E-10
 #define POINT_OI  -0.631121-2.38419E-07+1.49012E-08
-
-int display_width = DISPLAY_WIDTH;
-int display_height = DISPLAY_HEIGHT;
 
 // global variables used for calculating fractal
 uint8_t *glob_frac1, *glob_frac2;
 double glob_dr, glob_di, glob_pr, glob_pi, glob_sr, glob_si;
 long glob_offs;
+
+volatile bool interrupt_received = false;
+static void InterruptHandler(int signo) {
+    interrupt_received = true;
+}
+
+// ------------------------------------------------------------------------------------------
+// Command Line Options
+
+// option vars
+const char *opt_hostname = NULL;
+double opt_timeout = 60*60*24;  // timeout in 24 hrs
+int opt_layer  = Z_LAYER;
+int opt_width  = DISPLAY_WIDTH;
+int opt_height = DISPLAY_HEIGHT;
+int opt_xoff=0, opt_yoff=0;
+int opt_delay  = DELAY;
+int opt_palette = -1;  // default cycles
+
+int usage(const char *progname) {
+
+    fprintf(stderr, "Fractal (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
+    fprintf(stderr, "Usage: %s [options]\n", progname);
+    fprintf(stderr, "Options:\n"
+        "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
+        "\t-l <layer>     : Layer 0-15. (default 1)\n"
+        "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
+        "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
+        "\t-d <delay>     : Delay between frames in milliseconds. (default 20)\n"
+    );
+    return 1;
+}
+
+int cmdLine(int argc, char *argv[]) {
+
+    // command line options
+    int opt;
+    while ((opt = getopt(argc, argv, "?g:l:t:h:d:")) != -1) {
+        switch (opt) {
+        case '?':  // help
+            return usage(argv[0]);
+            break;
+        case 'g':  // geometry
+            if (sscanf(optarg, "%dx%d%d%d", &opt_width, &opt_height, &opt_xoff, &opt_yoff) < 2) {
+                fprintf(stderr, "Invalid size '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'l':  // layer
+            if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
+                fprintf(stderr, "Invalid layer '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 't':  // timeout
+            if (sscanf(optarg, "%lf", &opt_timeout) != 1 || opt_timeout < 0) {
+                fprintf(stderr, "Invalid timeout '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'h':  // hostname
+            opt_hostname = strdup(optarg); // leaking. Ignore.
+            break;
+        case 'd':  // delay
+            if (sscanf(optarg, "%d", &opt_delay) != 1 || opt_delay < 1) {
+                fprintf(stderr, "Invalid delay '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        default:
+            return usage(argv[0]);
+        }
+    }
+    return 0;
+}
 
 // --------------------------------------------------------------------------------
 // Fractal functions
@@ -75,8 +151,8 @@ void startFractal(double sr, double si, double er, double ei) {
     // compute deltas for interpolation in complex plane
     //glob_dr = (er - sr) / 640.0f;
     //glob_di = (ei - si) / 400.0f;
-    glob_dr = (er - sr) / (DISPLAY_WIDTH * 2.0f);
-    glob_di = (ei - si) / (DISPLAY_HEIGHT * 2.0f);
+    glob_dr = (er - sr) / (opt_width * 2.0f);
+    glob_di = (ei - si) / (opt_height * 2.0f);
     // remember start values
     glob_pr = sr;
     glob_pi = si;
@@ -87,13 +163,13 @@ void startFractal(double sr, double si, double er, double ei) {
 
 // compute 4 lines of fractal (MUST REDO)
 void computeFractal() {
-    if ((glob_offs + 1) >= (DISPLAY_WIDTH * DISPLAY_HEIGHT * 4)) {
+    if ((glob_offs + 1) >= (opt_width * opt_height * 4)) {
         return;
     }
     //for (int j=0; j < 4; j++) {
     for (int j=0; j < 2; j++) {
         glob_pr = glob_sr;
-        for (int i=0; i < (DISPLAY_WIDTH * 2); i++) {
+        for (int i=0; i < (opt_width * 2); i++) {
             uint8_t c = 0;
             double vi = glob_pi, vr = glob_pr, nvi, nvr;
             // loop until distance is above 2, or counter hits limit
@@ -109,7 +185,7 @@ void computeFractal() {
             // store color
             glob_frac1[glob_offs] = c;
             glob_offs++;
-            if (glob_offs  >= (DISPLAY_WIDTH * DISPLAY_HEIGHT * 4)) { return; }
+            if (glob_offs  >= (opt_width * opt_height * 4)) { return; }
             // interpolate X
             glob_pr += glob_dr;
         }
@@ -128,23 +204,23 @@ void finishFractal() {
 void zoomFractal( double z, uint8_t pixels[] ) {
 
     // z = 0.0 to 1.0
-    int width = (int)((DISPLAY_WIDTH<<17)/(256.0f*(1+z)))<<8,
-        height = (int)((DISPLAY_HEIGHT<<17)/(256.0f*(1+z)))<<8,
-        startx = ((DISPLAY_WIDTH<<17)-width)>>1,
-        starty = ((DISPLAY_HEIGHT<<17)-height)>>1,
-        deltax = width / DISPLAY_WIDTH,
-        deltay = height / DISPLAY_HEIGHT,
+    int width = (int)((opt_width<<17)/(256.0f*(1+z)))<<8,
+        height = (int)((opt_height<<17)/(256.0f*(1+z)))<<8,
+        startx = ((opt_width<<17)-width)>>1,
+        starty = ((opt_height<<17)-height)>>1,
+        deltax = width / opt_width,
+        deltay = height / opt_height,
         px, py = starty;
     long glob_offs = 0;
-    for (int j=0; j < DISPLAY_HEIGHT; j++) {
+    for (int j=0; j < opt_height; j++) {
         px = startx;
-        for (int i=0; i < DISPLAY_WIDTH; i++) {
+        for (int i=0; i < opt_width; i++) {
             // bilinear filter
             pixels[glob_offs] =
-                ( glob_frac2[(py>>16)*(DISPLAY_WIDTH * 2)+(px>>16)] * (0x100-((py>>8)&0xff)) * (0x100-((px>>8)&0xff))
-                + glob_frac2[(py>>16)*(DISPLAY_WIDTH * 2)+((px>>16)+1)] * (0x100-((py>>8)&0xff)) * ((px>>8)&0xff)
-                + glob_frac2[((py>>16)+1)*(DISPLAY_WIDTH * 2)+(px>>16)] * ((py>>8)&0xff) * (0x100-((px>>8)&0xff))
-                + glob_frac2[((py>>16)+1)*(DISPLAY_WIDTH * 2)+((px>>16)+1)] * ((py>>8)&0xff) * ((px>>8)&0xff) ) >> 16;
+                ( glob_frac2[(py>>16)*(opt_width * 2)+(px>>16)] * (0x100-((py>>8)&0xff)) * (0x100-((px>>8)&0xff))
+                + glob_frac2[(py>>16)*(opt_width * 2)+((px>>16)+1)] * (0x100-((py>>8)&0xff)) * ((px>>8)&0xff)
+                + glob_frac2[((py>>16)+1)*(opt_width * 2)+(px>>16)] * ((py>>8)&0xff) * (0x100-((px>>8)&0xff))
+                + glob_frac2[((py>>16)+1)*(opt_width * 2)+((px>>16)+1)] * ((py>>8)&0xff) * ((px>>8)&0xff) ) >> 16;
             // interpolate X
             px += deltax;
             glob_offs++;
@@ -182,20 +258,19 @@ void updatePalette(int t, Color palette[]) {
 // Main
 
 int main(int argc, char *argv[]) {
-    const char *hostname = NULL;   // will use default if not set otherwise
-    if (argc > 1) {
-        hostname = argv[1];        // hostname can be supplied as first arg
-    }
+
+    // parse command line
+    if (int e = cmdLine(argc, argv)) { return e; }
 
     // open socket and create our canvas
-    const int socket = OpenFlaschenTaschenSocket(hostname);
-    UDPFlaschenTaschen canvas(socket, display_width, display_height);
+    const int socket = OpenFlaschenTaschenSocket(opt_hostname);
+    UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
     canvas.Clear();
 
     // init vars
     Color palette[256];
-    uint8_t pixels[ display_width * display_height ];
-    for (int i=0; i < display_width * display_height; i++) { pixels[i] = 0; }  // clear pixel buffer
+    uint8_t pixels[ opt_width * opt_height ];
+    for (int i=0; i < opt_width * opt_height; i++) { pixels[i] = 0; }  // clear pixel buffer
     int count=0;
 
     // setup the palette
@@ -203,8 +278,8 @@ int main(int argc, char *argv[]) {
     // allocate memory for our fractal
     //glob_frac1 = new uint8_t[640 * 400];
     //glob_frac2 = new uint8_t[640 * 400];
-    glob_frac1 = new uint8_t[DISPLAY_WIDTH * DISPLAY_HEIGHT * 4];
-    glob_frac2 = new uint8_t[DISPLAY_WIDTH * DISPLAY_HEIGHT * 4];
+    glob_frac1 = new uint8_t[opt_width * opt_height * 4];
+    glob_frac2 = new uint8_t[opt_width * opt_height * 4];
 
     // set original zooming settings
     double zx = 4.0, zy = 4.0;
@@ -219,8 +294,13 @@ int main(int argc, char *argv[]) {
     updatePalette(0, palette);
     long long frameCount = 0;
 
-    while (1) {
+    // handle break
+    signal(SIGTERM, InterruptHandler);
+    signal(SIGINT, InterruptHandler);
 
+    time_t starttime = time(NULL);
+
+    do {
         // adjust zooming coefficient for next view
         if (zoom_in) { zx *= 0.5; zy *= 0.5; }
         else { zx *= 2; zy *= 2; }
@@ -229,7 +309,7 @@ int main(int argc, char *argv[]) {
         startFractal( POINT_OR - zx, POINT_OI - zy, POINT_OR + zx, POINT_OI + zy );
         int j=0;
         //while (j < 100) {
-        while (j < (DISPLAY_HEIGHT * 2)) {
+        while (j < (opt_height * 2)) {
             j++;
             // calc another few lines
             computeFractal();
@@ -237,29 +317,29 @@ int main(int argc, char *argv[]) {
             // display the old fractal, zooming in or out
             //if (zoom_in) { zoomFractal( (double)j / 100.0f ); }
             //else { zoomFractal( 1.0f - (double)j / 100.0f ); }
-            if (zoom_in) { zoomFractal( (double)j / (DISPLAY_HEIGHT * 2), pixels ); }
-            else { zoomFractal( 1.0f - (double)j / (DISPLAY_HEIGHT * 2), pixels ); }
+            if (zoom_in) { zoomFractal( (double)j / (opt_height * 2), pixels ); }
+            else { zoomFractal( 1.0f - (double)j / (opt_height * 2), pixels ); }
 
             // select some new colours
             //updatePalette( k * 100 + j );
-            updatePalette( k * (DISPLAY_HEIGHT * 2) + j, palette );
+            updatePalette( k * (opt_height * 2) + j, palette );
 
             // dump to screen
             //vga->Update();
 
             // copy pixel buffer to canvas
             int dst = 0;
-            for (int y=0; y < display_height; y++) {
-                for (int x=0; x < display_width; x++) {
+            for (int y=0; y < opt_height; y++) {
+                for (int x=0; x < opt_width; x++) {
                     canvas.SetPixel( x, y, palette[ pixels[dst] ] );
                     dst++;
                 }
             }
 
             // send canvas
-            canvas.SetOffset(0, 0, Z_LAYER);
+            canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
             canvas.Send();
-            usleep(DELAY * 1000);
+            usleep(opt_delay * 1000);
 
             frameCount++;
         }
@@ -279,9 +359,13 @@ int main(int argc, char *argv[]) {
 
         count++;
         if (count == INT_MAX) { count=0; }
-    }
 
-    // not reached
-    //delete glob_frac1;
-    //delete glob_frac2;
+    } while ( (difftime(time(NULL), starttime) <= opt_timeout) && !interrupt_received );
+
+    // clear canvas on exit
+    canvas.Clear();
+    canvas.Send();
+
+    delete glob_frac1;
+    delete glob_frac2;
 }
