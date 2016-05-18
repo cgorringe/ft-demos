@@ -15,7 +15,7 @@
 // different display (e.g. a local terminal display)
 // pass the hostname as parameter:
 //
-//  ./plasma localhost
+//  ./plasma -h localhost
 //
 // or set the environment variable FT_DISPLAY to not worry about it
 //
@@ -39,6 +39,7 @@
 
 #include "udp-flaschen-taschen.h"
 
+#include <getopt.h>
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>
@@ -47,6 +48,7 @@
 #include <strings.h>
 #include <time.h>
 #include <unistd.h>
+#include <string>
 
 namespace {
 // A two-dimensional array, essentially. A bit easier to use than manually
@@ -72,15 +74,97 @@ private:
 };
 }  // namespace
 
-//                               large  small
+// Defaults                      large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 1      // (0-15) 0=background
-
 #define DELAY 25              // Wait in ms. Determines frame rate.
 #define MOVE_SLOWNESS 100.0   // Slowness of move. More for slow.
 
 #define PALETTE_MAX 4  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB
+
+
+volatile bool interrupt_received = false;
+static void InterruptHandler(int signo) {
+    interrupt_received = true;
+}
+
+// ------------------------------------------------------------------------------------------
+// Command Line Options
+
+// option vars
+const char *opt_hostname = NULL;
+int opt_layer  = Z_LAYER;
+double opt_timeout = 60*60*24;  // timeout in 24 hrs
+int opt_width  = DISPLAY_WIDTH;
+int opt_height = DISPLAY_HEIGHT;
+int opt_delay  = DELAY;
+int opt_palette = -1;  // default cycles
+
+int usage(const char *progname) {
+
+    fprintf(stderr, "Plasma (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
+    fprintf(stderr, "Usage: %s [options]\n", progname);
+    fprintf(stderr, "Options:\n"
+        "\t-l <layer>     : Layer 0-15. (default 1)\n"
+        "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
+        "\t-g <W>x<H>     : Output geometry. (default 45x35)\n"
+        "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
+        "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
+        "\t-p <palette>   : Set color palette to: (default cycles)\n"
+        "\t                  0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB\n"
+    );
+    return 1;
+}
+
+int cmdLine(int argc, char *argv[]) {
+
+    // command line options
+    int opt;
+    while ((opt = getopt(argc, argv, "l:t:g:h:d:p:")) != -1) {
+        switch (opt) {
+        case 'l':  // layer
+            if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
+                fprintf(stderr, "Invalid layer '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 't':  // timeout
+            if (sscanf(optarg, "%lf", &opt_timeout) != 1 || opt_timeout < 0) {
+                fprintf(stderr, "Invalid timeout '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'g':  // geometry
+            if (sscanf(optarg, "%dx%d", &opt_width, &opt_height) < 2) {
+                fprintf(stderr, "Invalid size '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'h':  // hostname
+            opt_hostname = strdup(optarg); // leaking. Ignore.
+            break;
+        case 'd':  // delay
+            if (sscanf(optarg, "%d", &opt_delay) != 1 || opt_delay < 1) {
+                fprintf(stderr, "Invalid delay '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'p':  // color palette
+            if (sscanf(optarg, "%d", &opt_palette) != 1 || opt_palette < 0 || opt_palette > PALETTE_MAX) {
+                fprintf(stderr, "Invalid color palette '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        default:
+            return usage(argv[0]);
+        }
+    }
+    return 0;
+}
+
+// ------------------------------------------------------------------------------------------
+
 
 void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, int b2, Color palette[]) {
     float k;
@@ -145,36 +229,35 @@ void setPalette(int num, Color palette[]) {
 }
 
 int main(int argc, char *argv[]) {
-    const char *hostname = NULL;   // will use default if not set otherwise
-    if (argc > 1) {
-        hostname = argv[1];        // hostname can be supplied as first arg
-    }
+
+    // parse command line
+    if (int e = cmdLine(argc, argv)) { return e; }
 
     // We create a supersampling of our two-dimensional lookup-table. We
     // trade memory for CPU here.
     const int lookup_quant = 20;
 
-    const int width = DISPLAY_WIDTH;
-    const int height = DISPLAY_HEIGHT;
+    //const int width = DISPLAY_WIDTH;
+    //const int height = DISPLAY_HEIGHT;
 
     // open socket and create our canvas
-    const int socket = OpenFlaschenTaschenSocket(hostname);
-    UDPFlaschenTaschen canvas(socket, width, height);
+    const int socket = OpenFlaschenTaschenSocket(opt_hostname);
+    UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
     canvas.Clear();
 
     // set the color palette
     Color palette[256];
 
     // Value for pixels buffer
-    Buffer2D<float> pixels(width, height);
+    Buffer2D<float> pixels(opt_width, opt_height);
 
     // Our plasma needs to cover double the area as we only look at
     // a window of it which we shift around.
     // This is essentially a two-dimensional lookup-table.
-    Buffer2D<float> plasma1(lookup_quant * width * 2, lookup_quant * height * 2);
-    Buffer2D<float> plasma2(lookup_quant * width * 2, lookup_quant * height * 2);
-    const int center_x = lookup_quant * width;  // For our circular calcs.
-    const int center_y = lookup_quant * height;
+    Buffer2D<float> plasma1(lookup_quant * opt_width * 2, lookup_quant * opt_height * 2);
+    Buffer2D<float> plasma2(lookup_quant * opt_width * 2, lookup_quant * opt_height * 2);
+    const int center_x = lookup_quant * opt_width;  // For our circular calcs.
+    const int center_y = lookup_quant * opt_height;
     for (int y=0; y < plasma1.height(); y++) {
         for (int x=0; x < plasma1.width(); x++) {
             plasma1.At(x, y) = sin(sqrt((center_y-y)*(center_y-y) +
@@ -186,22 +269,29 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    const float slowness = MOVE_SLOWNESS / DELAY;
+    const float slowness = MOVE_SLOWNESS / opt_delay;
     int x1, y1, x2, y2, x3, y3;
 
     // We slide a window of half the size within our plasma templates.
-    const int hw = lookup_quant * width / 2;
-    const int hh = lookup_quant * height / 2;
+    const int hw = lookup_quant * opt_width / 2;
+    const int hh = lookup_quant * opt_height / 2;
 
     srandom(time(NULL));
     int count = random();   // Set to 0 for predictable start.
     if (count < 0) count = -count;
-    setPalette(0, palette);
-    int curPalette = 0;
 
-    while (1) {
+    int curPalette = (opt_palette < 0) ? 0 : opt_palette;
+    setPalette(curPalette, palette);
+
+    // handle break
+    signal(SIGTERM, InterruptHandler);
+    signal(SIGINT, InterruptHandler);
+
+    time_t starttime = time(NULL);
+
+    do {
         // set new color palette
-        if ((count % 2000) == 0) {
+        if ( ((count % 2000) == 0) && (opt_palette < 0) ) {
             setPalette(curPalette, palette);
             curPalette++;
             if (curPalette > PALETTE_MAX) { curPalette = 0; }
@@ -220,8 +310,8 @@ int main(int argc, char *argv[]) {
         float higest_value = -100;
 
         // Write plasma to pixel buffer, still as float. Keep track of range.
-        for (int y=0; y < height; y++) {
-            for (int x=0; x < width; x++) {
+        for (int y=0; y < opt_height; y++) {
+            for (int x=0; x < opt_width; x++) {
                 const float value
                     = plasma1.At(x1+lookup_quant*x, y1+lookup_quant*y)
                     + plasma2.At(x2+lookup_quant*x, y2+lookup_quant*y)
@@ -234,8 +324,8 @@ int main(int argc, char *argv[]) {
 
         // Copy pixel buffer to canvas, lookup_quantd accordingly.
         const float value_range = higest_value - lowest_value;
-        for (int y=0; y < height; y++) {
-            for (int x=0; x < width; x++) {
+        for (int y=0; y < opt_height; y++) {
+            for (int x=0; x < opt_width; x++) {
                 float value = pixels.At(x, y);
                 // Normalize to [0..1]
                 const float normalized = (value - lowest_value) / value_range;
@@ -245,11 +335,18 @@ int main(int argc, char *argv[]) {
         }
         
         // send canvas
-        canvas.SetOffset(0, 0, Z_LAYER);
+        canvas.SetOffset(0, 0, opt_layer);
         canvas.Send();
-        usleep(DELAY * 1000);
+        usleep(opt_delay * 1000);
 
         count++;
         if (count == INT_MAX) { count=0; }
-    }
+
+    } while ( (difftime(time(NULL), starttime) <= opt_timeout) && !interrupt_received );
+
+    // clear canvas on exit
+    canvas.Clear();
+    canvas.Send();
+
+    return 0;
 }

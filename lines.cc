@@ -51,8 +51,7 @@
 #include <string.h>
 #include <string>
 
-// Defaults
-//                               large  small
+// Defaults                      large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 3      // (0-15) 0=background
@@ -81,19 +80,6 @@ struct Line {
 Line lines[MAX_LINES];
 int lines_idx;
 
-// option vars
-const char *opt_hostname = NULL;
-int opt_width  = DISPLAY_WIDTH;
-int opt_height = DISPLAY_HEIGHT;
-int opt_layer  = Z_LAYER;
-double opt_timeout = 60*60*24;  // timeout in 24 hrs
-int opt_draw_num = DRAW_NUM;    // 1, 2, or 4 lines
-int opt_line_algo = LINE_ALGO;  // 0=dots, 1=plain line, 2=anti-aliased line
-int opt_num_lines = NUM_LINES;
-int opt_delay = DELAY;
-int opt_skip_min = SKIP_MIN;
-int opt_skip_max = SKIP_MAX;
-
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
     interrupt_received = true;
@@ -102,7 +88,20 @@ static void InterruptHandler(int signo) {
 // ------------------------------------------------------------------------------------------
 // Command Line Options
 
-void usage(const char *progname) {
+// option vars
+const char *opt_hostname = NULL;
+int opt_layer  = Z_LAYER;
+double opt_timeout = 60*60*24;  // timeout in 24 hrs
+int opt_width  = DISPLAY_WIDTH;
+int opt_height = DISPLAY_HEIGHT;
+int opt_delay  = DELAY;
+int opt_draw_num = DRAW_NUM;    // 1, 2, or 4 lines
+int opt_line_algo = LINE_ALGO;  // 0=dots, 1=plain line, 2=anti-aliased line
+int opt_num_lines = NUM_LINES;
+int opt_skip_min = SKIP_MIN;
+int opt_skip_max = SKIP_MAX;
+
+int usage(const char *progname) {
 
     fprintf(stderr, "Lines (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
     fprintf(stderr, "Usage: %s [options] {one|two|four} \n", progname);
@@ -116,10 +115,10 @@ void usage(const char *progname) {
         "\t-n <number>    : Number of lines. (default 6)\n"
         "\t-s <min>,<max> : Skip min,max points. (default 1,3)\n"
     );
-    exit(1);
+    return 1;
 }
 
-void cmdLine(int argc, char *argv[]) {
+int cmdLine(int argc, char *argv[]) {
 
     // command line options
     int opt;
@@ -128,19 +127,19 @@ void cmdLine(int argc, char *argv[]) {
         case 'l':  // layer
             if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
                 fprintf(stderr, "Invalid layer '%s'\n", optarg);
-                usage(argv[0]);
+                return usage(argv[0]);
             }
             break;
         case 't':  // timeout
             if (sscanf(optarg, "%lf", &opt_timeout) != 1 || opt_timeout < 0) {
                 fprintf(stderr, "Invalid timeout '%s'\n", optarg);
-                usage(argv[0]);
+                return usage(argv[0]);
             }
             break;
         case 'g':  // geometry
             if (sscanf(optarg, "%dx%d", &opt_width, &opt_height) < 2) {
                 fprintf(stderr, "Invalid size '%s'\n", optarg);
-                usage(argv[0]);
+                return usage(argv[0]);
             }
             break;
         case 'h':  // hostname
@@ -149,7 +148,7 @@ void cmdLine(int argc, char *argv[]) {
         case 'd':  // delay
             if (sscanf(optarg, "%d", &opt_delay) != 1 || opt_delay < 1) {
                 fprintf(stderr, "Invalid delay '%s'\n", optarg);
-                usage(argv[0]);
+                return usage(argv[0]);
             }
             break;
         case 'a':  // anti-aliased lines
@@ -158,17 +157,17 @@ void cmdLine(int argc, char *argv[]) {
         case 'n':  // number of lines
             if (sscanf(optarg, "%d", &opt_num_lines) != 1 || opt_num_lines < 1 || opt_num_lines > MAX_LINES) {
                 fprintf(stderr, "Invalid number of lines '%s'\n", optarg);
-                usage(argv[0]);
+                return usage(argv[0]);
             }
             break;
         case 's':  // skip min,max points
             if (sscanf(optarg, "%d,%d", &opt_skip_min, &opt_skip_max) < 2 || opt_skip_min < 1 || opt_skip_max < opt_skip_min) {
                 fprintf(stderr, "Invalid skip values '%s'\n", optarg);
-                usage(argv[0]);
+                return usage(argv[0]);
             }
             break;
         default:
-            usage(argv[0]);
+            return usage(argv[0]);
         }
     }
 
@@ -185,8 +184,10 @@ void cmdLine(int argc, char *argv[]) {
     }
     else {
         fprintf(stderr, "Missing 'one', 'two', or 'four'\n");
-        usage(argv[0]);
+        return usage(argv[0]);
     }
+
+    return 0;
 }
 
 // ------------------------------------------------------------------------------------------
@@ -475,8 +476,11 @@ void drawAllLines(const Line &line, const Color &color, UDPFlaschenTaschen &canv
 
 int main(int argc, char *argv[]) {
 
-    cmdLine(argc, argv);
-    srandom(time(NULL)); // seed the random generator
+    // parse command line
+    if (int e = cmdLine(argc, argv)) { return e; }
+
+    // seed the random generator
+    srandom(time(NULL)); 
 
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(opt_hostname);
@@ -517,4 +521,6 @@ int main(int argc, char *argv[]) {
     // clear canvas on exit
     canvas.Clear();
     canvas.Send();
+
+    return 0;
 }

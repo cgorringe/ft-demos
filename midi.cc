@@ -56,8 +56,8 @@
 //                               large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-#define Z_LAYER 5       // (0-15) 0=background
-#define DELAY 50
+#define Z_LAYER 11       // (0-15) 0=background
+#define DELAY 100  // 50
 
 
 // random int in range min to max inclusive
@@ -108,14 +108,14 @@ void drawNotes(uint8_t notes[], UDPFlaschenTaschen &canvas) {
 // note = 0 to 127
 void noteOn(uint8_t note, uint8_t velocity, uint8_t channel, uint8_t notes[]) {
     //notes[note] = velocity;
-    fprintf(stderr, "ON : ch=%x note=0x%02X velocity=0x%02X\n",
-            channel, note, velocity);
+    //fprintf(stderr, "ON : ch=%x note=0x%02X velocity=0x%02X\n",
+    //        channel, note, velocity);
     notes[note & 0x7F] = 127;  // TODO: encode channel
 }
 
 void noteOff(uint8_t note, uint8_t velocity, uint8_t channel, uint8_t notes[]) {
-    fprintf(stderr, "OFF: ch=%x note=0x%02X velocity=0x%02X\n",
-            channel, note, velocity);
+    //fprintf(stderr, "OFF: ch=%x note=0x%02X velocity=0x%02X\n",
+    //        channel, note, velocity);
     notes[note & 0x7F] = 0;  // TODO: encode channel.
 }
 
@@ -229,9 +229,12 @@ int main(int argc, char *argv[]) {
 
     while (1) {
 
-        //if (count % 3 == 0) { test2(notes); }  // TEST
+        if (count % 3 == 0) { 
+            test2(notes); 
+            usleep(DELAY * 1000);
+        }  // TEST
 
-        readMidi(STDIN_FILENO, notes, DELAY);
+        //readMidi(STDIN_FILENO, notes, DELAY);
 
         scrollUp(canvas);
         drawNotes(notes, canvas);
