@@ -52,6 +52,7 @@
 #include <math.h>
 #include <string.h>
 #include <string>
+#include <signal.h>
 
 // Defaults                      large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5

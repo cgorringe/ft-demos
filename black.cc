@@ -46,6 +46,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string>
+#include <string.h>
+#include <signal.h>
 
 #define DISPLAY_WIDTH  (9*5)  // large: 9*5
 #define DISPLAY_HEIGHT (7*5)  //        7*5

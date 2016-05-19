@@ -23,8 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <string>
+#include <signal.h>
+
 
 #define PALETTE_MAX 2  // 0=Nebula, 1=Fire, 2=Bluegreen
 #define BLUR_DROP 32  // 8, 16

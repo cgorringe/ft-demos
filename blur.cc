@@ -50,6 +50,8 @@
 #include <limits.h>
 #include <time.h>
 #include <string>
+#include <string.h>
+#include <signal.h>
 
 // Defaults                      large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5

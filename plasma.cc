@@ -52,6 +52,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <string>
+#include <string.h>
+#include <signal.h>
 
 namespace {
 // A two-dimensional array, essentially. A bit easier to use than manually
