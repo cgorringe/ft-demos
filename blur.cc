@@ -299,14 +299,12 @@ int main(int argc, char *argv[]) {
     UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
     canvas.Clear();
 
-    // set the color palette
-    Color palette[256];
-
     // pixel buffer
     uint8_t pixels[ opt_width * opt_height ];
     for (int i=0; i < opt_width * opt_height; i++) { pixels[i] = 0; }  // clear pixel buffer
 
-    int count = 0;
+    // color palette
+    Color palette[256];
     int curPalette = (opt_palette < 0) ? 1 : opt_palette;
     setPalette(curPalette, palette);
 
@@ -314,6 +312,8 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, InterruptHandler);
     signal(SIGINT, InterruptHandler);
 
+    // other vars
+    int count = 0;
     time_t starttime = time(NULL);
 
     do {
