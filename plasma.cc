@@ -352,5 +352,6 @@ int main(int argc, char *argv[]) {
     canvas.Clear();
     canvas.Send();
 
+    if (interrupt_received) return 1;
     return 0;
 }

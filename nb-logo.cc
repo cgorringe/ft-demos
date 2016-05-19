@@ -261,4 +261,7 @@ int main(int argc, char *argv[]) {
     // clear frame on exit
     frame->Clear();
     frame->Send();
+
+    if (interrupt_received) return 1;
+    return 0;
 }

@@ -368,4 +368,7 @@ int main(int argc, char *argv[]) {
 
     delete glob_frac1;
     delete glob_frac2;
+
+    if (interrupt_received) return 1;
+    return 0;
 }

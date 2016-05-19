@@ -270,5 +270,7 @@ int main(int argc, char *argv[]) {
     if (interrupt_received) {
         fprintf(stderr, "Interrupted. Exit.\n");
     }
+
+    if (interrupt_received) return 1;
     return 0;
 }
