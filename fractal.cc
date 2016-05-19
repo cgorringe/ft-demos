@@ -286,11 +286,11 @@ int main(int argc, char *argv[]) {
     double zx = 4.0, zy = 4.0;
     bool zoom_in = true;
     // calculate the first fractal
-    printf("Calculating first frame... ");
+    //printf("Calculating first frame... ");
     startFractal( POINT_OR - zx, POINT_OI - zy, POINT_OR + zx, POINT_OI + zy );
     for (int j=0; j < 100; j++) { computeFractal(); }
     finishFractal();
-    printf("done\n");
+    //printf("done\n");
     
     updatePalette(0, palette);
     long long frameCount = 0;

@@ -10,7 +10,7 @@
 // How to run:
 //
 // To see command line options:
-//  ./nb-logo -?
+//  ./hack -?
 //
 // By default, connects to the installation at Noisebridge. If using a
 // different display (e.g. a local terminal display)
@@ -170,7 +170,6 @@ int cmdLine(int argc, char *argv[]) {
             strncpy(opt_display_text, text, TEXT_LENGTH);
         }
     }
-    printf("'%s'\n", opt_display_text);  // DEBUG
 
     return 0;
 }

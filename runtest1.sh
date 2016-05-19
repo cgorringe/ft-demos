@@ -4,13 +4,13 @@ set -e
 G=-g25x20
 
 while :; do
-./plasma  $G -t5 &
-./nb-logo $G -t5
-../client/send-text $G -f fonts/5x8.bdf -o -l6 Welcome to Noisebridge &
-./blur    $G -t5 bolt
-./blur    $G -t5 boxes
-./fractal $G -t5
-./hack    $G -r1 hack
-./lines   $G -t5 two
-./quilt   $G -t5
+./plasma  $G -l1 -t10 &
+./nb-logo $G -l5 -t10
+../client/send-text -g25x5 -l6  -f fonts/5x5.bdf -o Welcome to Noisebridge &
+./blur    $G -l1 -t10 bolt
+./hack    $G -l4 -r1 hack &
+./blur    $G -l1 -t10 boxes
+./fractal $G -l1 -t10
+./lines   $G -l2 -t10 two
+./quilt   $G -l3 -t10
 done
