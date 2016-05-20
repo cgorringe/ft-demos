@@ -85,7 +85,7 @@ int opt_r=0x00, opt_g=0xFF, opt_b=0x00;
 
 int usage(const char *progname) {
 
-    fprintf(stderr, "Hack (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
+    fprintf(stderr, "midi (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
     fprintf(stderr, "Usage: cat /dev/midi | %s [options]\n", progname);
     fprintf(stderr, "Options:\n"
         "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"

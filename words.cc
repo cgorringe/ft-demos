@@ -230,13 +230,13 @@ int main(int argc, char *argv[]) {
     }
 
     // **********
-
+/*
     // Center in in the available display space.
     const int y_pos = (height - font.height()) / 2 + font.baseline();
 
     // dry-run to determine total number of pixels.
     const int total_len = DrawText(&display, font, 0, y_pos, fg, NULL, text);
-
+//*/
     signal(SIGTERM, InterruptHandler);
     signal(SIGINT, InterruptHandler);
 

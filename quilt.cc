@@ -158,6 +158,8 @@ int main(int argc, char *argv[]) {
 
     time_t starttime = time(NULL);
     bool quit = false;
+    int w = opt_width, h = opt_height;
+    //int w = opt_width - 1, h = opt_height - 1;
 
     do {
         int r = randomInt(0, 255);
@@ -171,15 +173,15 @@ int main(int argc, char *argv[]) {
             for (int x=x1; x < opt_width; x += SKIP_NUM) {
 
                 canvas.SetPixel(x, y, Color(r, g, b));
-                canvas.SetPixel(opt_width - x, y, Color(r, g, b));
-                canvas.SetPixel(x, opt_height - y, Color(r, g, b));
-                canvas.SetPixel(opt_width - x, opt_height - y, Color(r, g, b));
+                canvas.SetPixel(w - x, y, Color(r, g, b));
+                canvas.SetPixel(x, h - y, Color(r, g, b));
+                canvas.SetPixel(w - x, h - y, Color(r, g, b));
 
-                // TEST: width and height may not be equal
+                // width and height may not be equal but that's OK
                 canvas.SetPixel(y, x, Color(r, g, b));
-                canvas.SetPixel(opt_width - y, x, Color(r, g, b));
-                canvas.SetPixel(y, opt_height - x, Color(r, g, b));
-                canvas.SetPixel(opt_width - y, opt_height - x, Color(r, g, b));
+                canvas.SetPixel(w - y, x, Color(r, g, b));
+                canvas.SetPixel(y, h - x, Color(r, g, b));
+                canvas.SetPixel(w - y, h - x, Color(r, g, b));
 
                 // send canvas
                 canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
