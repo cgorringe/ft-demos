@@ -13,6 +13,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://gnu.org/licenses/gpl-2.0.txt>
 
+// ** NOT DONE **
+// TODO: need to modify bdf-font.h & .cc code to draw fonts to 
+// a 1-byte per indexed pixel buffer, which I don't have time right now...
+
+
 #include "udp-flaschen-taschen.h"
 
 #include "../client/bdf-font.h"
@@ -24,11 +29,18 @@
 #include <string.h>
 #include <unistd.h>
 #include <string>
-#include <signal.h>
+#include <time.h>
+#include <math.h>
 
-
-#define PALETTE_MAX 2  // 0=Nebula, 1=Fire, 2=Bluegreen
+// Defaults                      large  small
+#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
+#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+#define Z_LAYER 7      // (0-15) 0=background
+#define DELAY 100
+#define PALETTE_MAX 3  // 1=Nebula, 2=Fire, 3=Bluegreen
 #define BLUR_DROP 32  // 8, 16
+#define TEXT_MAX 200  // not used?
+#define FONT_FILE "./fonts/5x5.bdf"
 
 
 volatile bool interrupt_received = false;
@@ -36,22 +48,131 @@ static void InterruptHandler(int signo) {
   interrupt_received = true;
 }
 
-static int usage(const char *progname) {
-    fprintf(stderr, "usage: %s [options] <TEXT>\n", progname);
+// ------------------------------------------------------------------------------------------
+// Command Line Options
+
+// option vars
+const char *opt_hostname = NULL;
+int opt_layer  = Z_LAYER;
+double opt_time = 10;  // default time calculated if not given
+int opt_width  = DISPLAY_WIDTH;
+int opt_height = DISPLAY_HEIGHT;
+int opt_xoff=0, opt_yoff=0;
+int opt_delay   = DELAY;
+int opt_palette = 1;  // default nebula
+char opt_display_text[TEXT_MAX];  // not used?
+ft::Font opt_font;
+
+int usage(const char *progname) {
+
+    fprintf(stderr, "Words (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
+    fprintf(stderr, "Usage: %s [options] <text>...\n", progname);
     fprintf(stderr, "Options:\n"
-            "\t-g <width>x<height>[+<off_x>+<off_y>[+<layer>]] : Output geometry. Default 45x<font-height>+0+0+1\n"
-            "\t-l <layer>      : Layer 0..15. Default 1 (note if also given in -g, then last counts)\n"
-            "\t-h <host>       : Flaschen-Taschen display hostname.\n"
-            "\t-f <fontfile>   : Path to *.bdf font file\n"
-        //    "\t-s<ms>          : Scroll milliseconds per pixel (default 60). 0 for no-scroll.\n"
-        //    "\t-o              : Only run once, don't scroll forever.\n"
-            "\t-c<RRGGBB>      : Text color as hex (default: FFFFFF)\n"
-            "\t-b<RRGGBB>      : Background color as hex (default: 000000)\n"
-            "\t-p <palette>    : Set color palette to: 0=Nebula, 1=Fire, 2=Bluegreen \n"
-            "\t-t <time>       : Total time in seconds to display all the words.\n"
-            );
+        "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
+        "\t-l <layer>     : Layer 0-15. (default 1)\n"
+        "\t-t <time>      : Total time in seconds to display all the words.\n"
+        "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
+        "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
+        "\t-p <palette>   : Set color palette to: (default 1)\n"
+        "\t                  1=Nebula, 2=Fire, 3=Bluegreen\n"
+        "\t-f <fontfile>  : Path to *.bdf font file. (default: fonts/5x5.bdf)\n"
+    //    "\t-r <repeat>    : Repeat phrase x number of times, then exits. (default 1)\n"
+    );
     return 1;
 }
+
+int cmdLine(int argc, char *argv[]) {
+
+    // command line options
+    int opt;
+    while ((opt = getopt(argc, argv, "?g:l:t:h:d:p:f:")) != -1) {
+        switch (opt) {
+        case '?':  // help
+            return usage(argv[0]);
+            break;
+        case 'g':  // geometry
+            if (sscanf(optarg, "%dx%d%d%d", &opt_width, &opt_height, &opt_xoff, &opt_yoff) < 2) {
+                fprintf(stderr, "Invalid size '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'l':  // layer
+            if (sscanf(optarg, "%d", &opt_layer) != 1 || opt_layer < 0 || opt_layer >= 16) {
+                fprintf(stderr, "Invalid layer '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 't':  // time
+            if (sscanf(optarg, "%lf", &opt_time) != 1 || opt_time < 0) {
+                fprintf(stderr, "Invalid time in seconds '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'h':  // hostname
+            opt_hostname = strdup(optarg); // leaking. Ignore.
+            break;
+        case 'd':  // delay
+            if (sscanf(optarg, "%d", &opt_delay) != 1 || opt_delay < 1) {
+                fprintf(stderr, "Invalid delay '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'p':  // color palette
+            if (sscanf(optarg, "%d", &opt_palette) != 1 || opt_palette < 1 || opt_palette > PALETTE_MAX) {
+                fprintf(stderr, "Invalid color palette '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
+        case 'f':  // font
+            if (!opt_font.LoadFont(optarg)) {
+                fprintf(stderr, "Couldn't load font '%s'\n", optarg);
+            }
+            break;
+        default:
+            return usage(argv[0]);
+        }
+    }
+
+    if (opt_font.height() < 0) {
+        // use FONT_FILE if exists
+        if (!opt_font.LoadFont(FONT_FILE)) {
+            fprintf(stderr, "Couldn't load font '%s'\n", FONT_FILE);
+            return usage(argv[0]);
+        }
+    }
+
+    if (opt_height < 0) {
+        opt_height = opt_font.height();
+    }
+
+    if (opt_width < 1 || opt_height < 1) {
+        fprintf(stderr, "%dx%d is a rather unusual size\n", opt_width, opt_height);
+        return usage(argv[0]);
+    }
+
+    // assign default DISPLAY_TEXT
+    //strncpy(opt_display_text, DISPLAY_TEXT, TEXT_LENGTH);
+
+    // retrieve arg text from remaining arguments
+    /*
+    std::string str;
+    if (argv[optind]) {
+        str.append(argv[optind]);
+        for (int i = optind + 1; i < argc; i++) {
+            str.append(" ").append(argv[i]);
+        }
+        const char *text = str.c_str();
+        while (isspace(*text)) { text++; }  // remove leading spaces
+        if (text && (strlen(text) > 0)) {
+            strncpy(opt_display_text, text, TEXT_LENGTH);
+        }
+    }
+    //*/
+
+    return 0;
+}
+
+// ------------------------------------------------------------------------------------------
 
 // random int in range min to max inclusive
 int randomInt(int min, int max) {
@@ -71,20 +192,22 @@ void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, i
 void setPalette(int num, Color palette[]) {
     switch (num) {
     case 0:
+        break;
+    case 1:
         // Nebula
         colorGradient(   0,  63,   0,   0,   0,   0,   0, 127, palette );  // black -> half blue
         colorGradient(  64, 127,   0,   0, 127, 127,   0, 255, palette );  // half blue -> blue-violet
         colorGradient( 128, 191, 127,   0, 255, 255,   0,   0, palette );  // blue-violet -> red
         colorGradient( 192, 255, 255,   0,   0, 255, 255, 255, palette );  // red -> white
         break;
-    case 1:
+    case 2:
         // Fire
         colorGradient(   0,  63,   0,   0,   0,   0,   0, 127, palette );  // black -> half blue
         colorGradient(  64, 127,   0,   0, 127, 255,   0,   0, palette );  // half blue -> red
         colorGradient( 128, 191, 255,   0,   0, 255, 255,   0, palette );  // red -> yellow
         colorGradient( 192, 255, 255, 255,   0, 255, 255, 255, palette );  // yellow -> white
         break;
-    case 2:
+    case 3:
         // Bluegreen
         colorGradient(   0,  63,   0,   0,   0,   0,   0, 127, palette );  // black -> half blue
         colorGradient(  64, 127,   0,   0, 127,   0, 127, 255, palette );  // half blue -> teal
@@ -107,110 +230,23 @@ void blur(int width, int height, uint8_t pixels[]) {
     }
 }
 
-
-
 // --------------------------------------------------------------------------------
 
 int main(int argc, char *argv[]) {
-    int width = 45;
-    int height = 35;  // -1
-    int off_x = 0;
-    int off_y = 0;
-    int off_z = 1;
+
+    fprintf(stderr, "** NOT DONE YET **\n");
+
+    // parse command line
+    if (int e = cmdLine(argc, argv)) { return e; }
+
+    srandom(time(NULL)); // seed the random generator
+/*
     int scroll_delay_ms = 50;
     bool run_forever = true;
-    const char *host = NULL;
-
     Color fg(0xff, 0xff, 0xff);
     Color bg(0, 0, 0);
     int r, g, b;
-
-    ft::Font font;
-    int opt;
-    while ((opt = getopt(argc, argv, "f:g:h:s:oc:b:l:p:t:")) != -1) {
-        switch (opt) {
-        case 'g':
-            if (sscanf(optarg, "%dx%d%d%d%d", &width, &height, &off_x, &off_y, &off_z)
-                < 2) {
-                fprintf(stderr, "Invalid size spec '%s'", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 'h':
-            host = strdup(optarg); // leaking. Ignore.
-            break;
-        case 'f':
-            if (!font.LoadFont(optarg)) {
-                fprintf(stderr, "Couldn't load font '%s'\n", optarg);
-            }
-            break;
-        case 'o':  // REMOVE
-            run_forever = false;
-            break;
-        case 'l':
-            if (sscanf(optarg, "%d", &off_z) != 1 || off_z < 0 || off_z >= 16) {
-                fprintf(stderr, "Invalid layer '%s'\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 's':  // REMOVE
-            scroll_delay_ms = atoi(optarg);
-            if (scroll_delay_ms > 0 && scroll_delay_ms < 10) {
-                // Don't do crazy packet sending.
-                scroll_delay_ms = 10;
-            }
-            break;
-        case 'c':
-            if (sscanf(optarg, "%02x%02x%02x", &r, &g, &b) != 3) {
-                fprintf(stderr, "Foreground color parse error\n");
-                return usage(argv[0]);
-            }
-            fg.r = r; fg.g = g; fg.b = b;
-            break;
-        case 'b':
-            if (sscanf(optarg, "%02x%02x%02x", &r, &g, &b) != 3) {
-                fprintf(stderr, "Background color parse error\n");
-                return usage(argv[0]);
-            }
-            bg.r = r; bg.g = g; bg.b = b;
-            break;
-        case 'p':
-            /*
-            if (sscanf(optarg, "%d", &off_z) != 1 || off_z < 0 || off_z >= 16) {
-                fprintf(stderr, "Invalid layer '%s'\n", optarg);
-                return usage(argv[0]);
-            }
-            //*/
-            break;
-        case 't':
-            break;
-        default:
-            return usage(argv[0]);
-        }
-    }
-
-    if (font.height() < 0) {
-        fprintf(stderr, "Need to provide a font.\n");
-        return usage(argv[0]);
-    }
-
-    if (height < 0) {
-        height = font.height();
-    }
-
-    if (width < 1 || height < 1) {
-        fprintf(stderr, "%dx%d is a rather unusual size\n", width, height);
-        return usage(argv[0]);
-    }
-
-    int fd = OpenFlaschenTaschenSocket(host);
-    if (fd < 0) {
-        fprintf(stderr, "Cannot connect.\n");
-        return 1;
-    }
-
-    UDPFlaschenTaschen display(fd, width, height);
-    display.SetOffset(off_x, off_y, off_z);
+//*/
 
     // Assemble all non-option arguments to one text.
     std::string str;
@@ -229,7 +265,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // **********
+    // open socket and create our canvas
+    const int socket = OpenFlaschenTaschenSocket(opt_hostname);
+    UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
+    canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
+    canvas.Clear();
+
+    // ***** TODO *****
+
 /*
     // Center in in the available display space.
     const int y_pos = (height - font.height()) / 2 + font.baseline();
@@ -266,12 +309,11 @@ int main(int argc, char *argv[]) {
     }
 //*/
 
-    close(fd);
-
-    if (interrupt_received) {
-        fprintf(stderr, "Interrupted. Exit.\n");
-    }
-
+    // clear canvas on exit
+    canvas.Clear();
+    canvas.Send();
+    close(socket);
+    
     if (interrupt_received) return 1;
     return 0;
 }
