@@ -1,4 +1,23 @@
-0.0 1.0 plasma
-0.5 1.5 nb-logo
-1.0 2.0 fractal
-2.0 3.0 blur
+# make sure plasma -t is set to end time in seconds
+
+0:00 plasma  -g45x35     -l1 -t240
+0:10 ../client/send-text -g45x5+0+0 -l6 -b010101 -o -f fonts/5x5.bdf Welcome to Noisebridge
+0:20 ../client/send-text -g45x5+0+30 -l7 -b010101 -o -f fonts/5x5.bdf noisebridge.net
+0:30 nb-logo -g35x25+5+5 -l5 -t25
+
+1:00 blur    -g45x35     -l2 -t21 bolt
+1:10 hack    -g45x35     -l4 -r1  hack
+1:20 blur    -g45x35     -l3 -t20 boxes
+
+2:00 fractal -g45x35     -l2 -t60
+2:05 ../client/send-text -g45x5+0+0 -l6 -o -f fonts/5x5.bdf Hack the Planet
+2:15 nb-logo -g35x25+5+5 -l5 -t40
+
+3:00 black   -g35x25+5+5 -l2 -t30 -b
+3:01 lines   -g35x25+5+5 -l3 -t28 two
+3:10 ../client/send-text -g45x5+0+0 -l6 -b010101 -o -f fonts/5x5.bdf Welcome to Noisebridge
+3:20 ../client/send-text -g45x5+0+30 -l7 -b010101 -o -f fonts/5x5.bdf noisebridge.net
+
+3:30 quilt   -g35x25+5+5 -l4 -t30
+4:00 black   -g35x25+5+5 -l4
+4:00 end
