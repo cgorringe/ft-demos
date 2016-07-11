@@ -69,7 +69,8 @@ $ ./random-dots
 6. lines
 7. hack - rotating letters + blur effect
 8. fractal - zooming Mandelbrot fractal
-
+9. midi - converts a midi bytestream into a player piano demo of scrolling dots
+10. life - Conway's Game of Life
 
 _____
 
