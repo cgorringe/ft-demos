@@ -56,6 +56,7 @@
 #define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 2      // (0-15) 0=background
 #define DELAY 200
+#define NUM_DOTS 6
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -69,6 +70,7 @@ static void InterruptHandler(int signo) {
 const char *opt_hostname = NULL;
 int opt_layer  = Z_LAYER;
 double opt_timeout = 60*60*24;  // timeout in 24 hrs
+double opt_respawn = 0;
 int opt_width  = DISPLAY_WIDTH;
 int opt_height = DISPLAY_HEIGHT;
 int opt_xoff=0, opt_yoff=0;
@@ -76,6 +78,7 @@ int opt_delay  = DELAY;
 bool opt_fgcolor = false, opt_bgcolor = false;
 int opt_fg_R=0, opt_fg_G=0, opt_fg_B=0;
 int opt_bg_R=0, opt_bg_G=0, opt_bg_B=0;
+int opt_num_dots = NUM_DOTS;
 
 int usage(const char *progname) {
 
@@ -83,12 +86,14 @@ int usage(const char *progname) {
     fprintf(stderr, "Usage: %s [options]\n", progname);
     fprintf(stderr, "Options:\n"
         "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
-        "\t-l <layer>     : Layer 0-15. (default 1)\n"
+        "\t-l <layer>     : Layer 0-15. (default 2)\n"
         "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
+        "\t-r <seconds>   : Respawn random dots after given seconds.\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
-        "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
-        "\t-c <RRGGBB>    : Forground color in hex (default cycles)\n"
-        "\t-b <RRGGBB>    : Background color in hex (default transparent)\n"
+        "\t-d <delay>     : Delay between frames in milliseconds. (default 200)\n"
+        "\t-c <RRGGBB>    : Forground color in hex (-c0 = transparent, default cycles)\n"
+        "\t-b <RRGGBB>    : Background color in hex (-b0 = #010101, default transparent)\n"
+        "\t-n <number>    : Initialize with 1/n random dots. (default 6)\n"
     );
     return 1;
 }
@@ -97,7 +102,7 @@ int cmdLine(int argc, char *argv[]) {
 
     // command line options
     int opt;
-    while ((opt = getopt(argc, argv, "?g:l:t:h:d:c:b:")) != -1) {
+    while ((opt = getopt(argc, argv, "?g:l:t:r:h:d:c:b:n:")) != -1) {
         switch (opt) {
         case '?':  // help
             return usage(argv[0]);
@@ -120,6 +125,12 @@ int cmdLine(int argc, char *argv[]) {
                 return usage(argv[0]);
             }
             break;
+        case 'r':  // respawn
+            if (sscanf(optarg, "%lf", &opt_respawn) != 1 || opt_respawn < 0) {
+                fprintf(stderr, "Invalid respawn '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
         case 'h':  // hostname
             opt_hostname = strdup(optarg); // leaking. Ignore.
             break;
@@ -131,17 +142,23 @@ int cmdLine(int argc, char *argv[]) {
             break;
         case 'c':  // forground color
             if (sscanf(optarg, "%02x%02x%02x", &opt_fg_R, &opt_fg_G, &opt_fg_B) != 3) {
-                fprintf(stderr, "Color parse error\n");
-                return usage(argv[0]);
+                opt_fg_R=0, opt_fg_G=0, opt_fg_B=0;
+                //fprintf(stderr, "Color parse error\n");
+                //return usage(argv[0]);
             }
             opt_fgcolor = true;
             break;
         case 'b':  // background color
             if (sscanf(optarg, "%02x%02x%02x", &opt_bg_R, &opt_bg_G, &opt_bg_B) != 3) {
-                fprintf(stderr, "Color parse error\n");
-                return usage(argv[0]);
+                opt_bg_R=1, opt_bg_G=1, opt_bg_B=1;
             }
             opt_bgcolor = true;
+            break;
+        case 'n':  // init with 1/n number of dots
+            if (sscanf(optarg, "%d", &opt_num_dots) != 1 || opt_num_dots < 2) {
+                fprintf(stderr, "Invalid number of dots '%s'\n", optarg);
+                return usage(argv[0]);
+            }
             break;
         default:
             return usage(argv[0]);
@@ -167,25 +184,10 @@ void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, i
     }
 }
 
-/*
-void blur1(int width, int height, uint8_t pixels[]) {
-
-    int size = width * (height - 1) - 1;
-    uint8_t dot;
-    // blur effect
-    for (int i=0; i < size; i++) {
-        dot = (uint8_t)((pixels[i] + pixels[i + 1] + pixels[i + width] + pixels[i + width + 1]) >> 2) & 0xFF;
-        if (dot <= 8) { dot = 0; }
-        else { dot -= 8; }
-        pixels[i] = dot;
-    }
-}
-//*/
-
 void initGameOfLife(int width, int height, uint8_t pixels[]) {
 
     for (int i=0; i < width * height; i++) { 
-        pixels[i] = randomInt(0, 5) ? 0 : 1;
+        pixels[i] = randomInt(0, opt_num_dots - 1) ? 0 : 1;
     }
 
 }
@@ -256,9 +258,18 @@ int main(int argc, char *argv[]) {
     // other vars
     int count = 0, colr = 0;
     time_t starttime = time(NULL);
+    time_t respawn_time = starttime;
 
     do {
         runGameOfLife(opt_width, opt_height, pixels);
+
+        // check for respawn
+        if (opt_respawn > 0) {
+            if (difftime(time(NULL), respawn_time) > opt_respawn) {
+                respawn_time = time(NULL);
+                initGameOfLife(opt_width, opt_height, pixels);
+            }
+        }
 
         // set pixel color if cycling through palette
         if (!opt_fgcolor) {
