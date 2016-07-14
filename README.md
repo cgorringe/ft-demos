@@ -15,6 +15,7 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 ![](img/hack.jpg) 
 ![](img/fractal1.jpg) 
 ![](img/fractal2.jpg) 
+![](img/life.jpg)
 
 
 ### Install How-to
