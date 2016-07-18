@@ -3,7 +3,7 @@
 echo "Running Demo..."
 
 # export FT_DISPLAY=10.20.0.40
-# cd `dirname $0`
+cd `dirname $0`
 export FT_DISPLAY=localhost
 
 set -e
