@@ -73,6 +73,13 @@ $ ./random-dots
 9. midi - converts a midi bytestream into a player piano demo of scrolling dots
 10. life - Conway's Game of Life
 
+
+### Noisebridge hosts
+* ```ft.noise``` - Large Flaschen-Taschen (45x35 bb)
+* ```ftkleine.noise``` - Smaller (25x20 bb)
+* ```bookcase.noise``` - Library bookshelves
+* ```square.noise``` - [Noise Square table](https://noisebridge.net/wiki/Noise_Square_Table)
+
 _____
 
 ## License
