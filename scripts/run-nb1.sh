@@ -10,7 +10,8 @@ G1=-g45x35
 G2=-g35x25+5+5
 F1=../fonts/5x5.bdf
 
-../plasma  $G1 -l1  &
+# plasma timesout in 30 days (60 * 60 * 24 * 30)
+../plasma  $G1 -l1 -t2592000 &
 
 while :; do
 
@@ -48,7 +49,7 @@ while :; do
   ../black $G2 -l3
 
   # game of life
-  ../life $G1 -l2 -c0 -b0 -t120 &
+  ../life $G1 -l2 -c0 -b0 -r30 -t120 &
   sleep 30
   ../send-text -g45x5+0+0 -l3 -f $F1 -o "Be Excellent to Each Other" &
   sleep 90
