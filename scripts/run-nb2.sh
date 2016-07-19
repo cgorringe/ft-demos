@@ -14,7 +14,7 @@ F1=../fonts/5x5.bdf
 while :; do
 
   # plasma
-  ../plasma  $G1 -l0 -t180 &
+  ../plasma  $G1 -l0 -t175 &
   sleep 60
   ../send-text -g45x5+0+0 -l1 -b010101 -f $F1 -o "Welcome to Noisebridge" &
   sleep 120
