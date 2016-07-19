@@ -34,7 +34,7 @@ while :; do
   sleep 90
 
   # plasma
-  ../plasma  $G1 -l0 -t100 &
+  ../plasma  $G1 -l0 -t95 &
   sleep 30
 
   # lines
