@@ -8,6 +8,7 @@ cd `dirname $0`
 set -e
 G1=-g45x35
 G2=-g35x25+5+5
+F1=../fonts/5x5.bdf
 
 ../plasma  $G1 -l1  &
 
@@ -15,13 +16,13 @@ while :; do
 
   # plasma
   sleep 60
-  ../send-text -g45x5+0+0 -l3 -b010101 -f fonts/5x5.bdf -o "Welcome to Noisebridge" &
+  ../send-text -g45x5+0+0 -l3 -b010101 -f $F1 -o "Welcome to Noisebridge" &
   sleep 120
 
   # blur + hack
   ../blur $G1 -l2 -t60 bolt &
   sleep 30
-  ../send-text -g45x5+0+0 -l3 -cFF00FF -o "Hack the Planet" &
+  ../send-text -g45x5+0+0 -l3 -cFF00FF -f $F1 -o "Hack the Planet" &
   sleep 30
   ../blur $G1 -l2 -t60 boxes &
   sleep 60
@@ -29,7 +30,7 @@ while :; do
   # fractal
   ../fractal $G1 -l2 -t120 &
   sleep 30
-  ../send-text -g45x5+0+0 -l3 -o "Be Excellent to Each Other" &
+  ../send-text -g45x5+0+0 -l3 -f $F1 -o "Be Excellent to Each Other" &
   sleep 90
 
   # plasma
@@ -49,7 +50,7 @@ while :; do
   # game of life
   ../life $G1 -l2 -c0 -b0 -t120 &
   sleep 30
-  ../send-text -g45x5+0+0 -l3 -o "Be Excellent to Each Other" &
+  ../send-text -g45x5+0+0 -l3 -f $F1 -o "Be Excellent to Each Other" &
   sleep 90
 
 done

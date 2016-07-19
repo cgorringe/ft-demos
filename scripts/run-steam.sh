@@ -9,7 +9,7 @@ cd `dirname $0`
 set -e
 G1=-g45x35
 G2=-g35x25+5+5
-F1=fonts/5x5.bdf
+F1=../fonts/5x5.bdf
 
 ../plasma $G1 -l1  &
 
