@@ -29,5 +29,8 @@ life: life.cc
 % : %.cc $(FTLIB)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
+$(FTLIB):
+	make -C $(FLASCHEN_TASCHEN_API_DIR)/lib
+
 clean:
 	rm -f $(ALL)
