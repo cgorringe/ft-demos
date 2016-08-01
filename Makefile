@@ -8,24 +8,6 @@ ALL=simple-example simple-animation random-dots quilt black plasma1 plasma2 plas
 
 all : $(ALL)
 
-simple-example: simple-example.cc
-simple-animation: simple-animation.cc
-random-dots: random-dots.cc
-quilt: quilt.cc
-black: black.cc
-plasma1: plasma1.cc
-plasma2: plasma2.cc
-plasma: plasma.cc
-nb-logo: nb-logo.cc
-blur: blur.cc
-lines: lines.cc
-hack: hack.cc
-fractal: fractal.cc
-midi: midi.cc
-kbd2midi: kbd2midi.cc
-words: words.cc
-life: life.cc
-
 % : %.cc $(FTLIB)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
