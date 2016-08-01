@@ -14,13 +14,13 @@
 // along with this program.  If not, see <http://gnu.org/licenses/gpl-2.0.txt>
 
 // ** NOT DONE **
-// TODO: need to modify bdf-font.h & .cc code to draw fonts to 
+// TODO: need to modify bdf-font.h & .cc code to draw fonts to
 // a 1-byte per indexed pixel buffer, which I don't have time right now...
 
 
 #include "udp-flaschen-taschen.h"
 
-#include "../client/bdf-font.h"
+#include "bdf-font.h"
 
 #include <getopt.h>
 #include <signal.h>
@@ -218,7 +218,7 @@ void setPalette(int num, Color palette[]) {
 }
 
 void blur(int width, int height, uint8_t pixels[]) {
-    
+
     int size = width * (height - 1) - 1;
     uint8_t dot;
     // blur effect
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
     canvas.Clear();
     canvas.Send();
     close(socket);
-    
+
     if (interrupt_received) return 1;
     return 0;
 }

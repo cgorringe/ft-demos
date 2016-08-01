@@ -1,51 +1,33 @@
-CXXFLAGS=-Wall -O3 -I../common -I.
-OBJECTS=udp-flaschen-taschen.o
+FLASCHEN_TASCHEN_API_DIR=ft/api
 
-# LIB_OBJECTS=udp-flaschen-taschen.o bdf-font.o
-# LIB_CXXFLAGS=$(CXXFLAGS) -fPIC
-# LDFLAGS=-L. -lftclient
-
-MAGICK_CXXFLAGS=`GraphicsMagick++-config --cppflags --cxxflags`
-MAGICK_LDFLAGS=`GraphicsMagick++-config --ldflags --libs`
-
-FFMPEG_LDFLAGS=`pkg-config --cflags --libs  libavcodec libavformat libswscale libavutil`
+CXXFLAGS=-Wall -O3 -I$(FLASCHEN_TASCHEN_API_DIR)/include -I.
+LDFLAGS=-L$(FLASCHEN_TASCHEN_API_DIR)/lib -lftclient
+FTLIB=$(FLASCHEN_TASCHEN_API_DIR)/lib/libftclient.a
 
 ALL=simple-example simple-animation random-dots quilt black plasma1 plasma2 plasma nb-logo blur lines hack fractal midi kbd2midi words life
 
 all : $(ALL)
 
-simple-example: simple-example.cc $(OBJECTS)
-simple-animation: simple-animation.cc $(OBJECTS)
-random-dots: random-dots.cc $(OBJECTS)
-quilt: quilt.cc $(OBJECTS)
-black: black.cc $(OBJECTS)
-plasma1: plasma1.cc $(OBJECTS)
-plasma2: plasma2.cc $(OBJECTS)
-plasma: plasma.cc $(OBJECTS)
-nb-logo: nb-logo.cc $(OBJECTS)
-blur: blur.cc $(OBJECTS)
-lines: lines.cc $(OBJECTS)
-hack: hack.cc $(OBJECTS)
-fractal: fractal.cc $(OBJECTS)
-midi: midi.cc $(OBJECTS)
-kbd2midi: kbd2midi.cc $(OBJECTS)
-words: words.cc $(OBJECTS) ../client/bdf-font.o
-life: life.cc $(OBJECTS)
+simple-example: simple-example.cc
+simple-animation: simple-animation.cc
+random-dots: random-dots.cc
+quilt: quilt.cc
+black: black.cc
+plasma1: plasma1.cc
+plasma2: plasma2.cc
+plasma: plasma.cc
+nb-logo: nb-logo.cc
+blur: blur.cc
+lines: lines.cc
+hack: hack.cc
+fractal: fractal.cc
+midi: midi.cc
+kbd2midi: kbd2midi.cc
+words: words.cc
+life: life.cc
 
-% : %.cc
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-#% : %.cc libftclient.a
-#	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
-
-#%.o : %.cc
-#	$(CXX) $(LIB_CXXFLAGS) -c -o $@ $<
-#	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-#libftclient.a: $(LIB_OBJECTS)
-#	ar rcs $@ $^
-
+% : %.cc $(FTLIB)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
 clean:
-	rm -f $(ALL) $(OBJECTS)
-#	rm -f $(ALL) $(LIB_OBJECTS) libftclient.a
+	rm -f $(ALL)
