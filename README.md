@@ -4,17 +4,17 @@ By [Carl Gorringe](http://carl.gorringe.org)
 
 Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Project](https://noisebridge.net/wiki/Flaschen_Taschen), based on [code written by hzeller](https://github.com/hzeller/flaschen-taschen).
 
-![](img/random-dots.jpg) 
-![](img/quilt.jpg) 
-![](img/nb-logo.jpg) 
-![](img/plasma_large.jpg) 
-![](img/plasma_small.jpg) 
-![](img/lines.jpg) 
-![](img/blur_wave.jpg) 
-![](img/blur_pong.jpg) 
-![](img/hack.jpg) 
-![](img/fractal1.jpg) 
-![](img/fractal2.jpg) 
+![](img/random-dots.jpg)
+![](img/quilt.jpg)
+![](img/nb-logo.jpg)
+![](img/plasma_large.jpg)
+![](img/plasma_small.jpg)
+![](img/lines.jpg)
+![](img/blur_wave.jpg)
+![](img/blur_pong.jpg)
+![](img/hack.jpg)
+![](img/fractal1.jpg)
+![](img/fractal2.jpg)
 ![](img/life.jpg)
 
 
@@ -22,29 +22,12 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 
 This works on a unix-like OS such as Linux or Mac OS X.
 
-#### 1. Check out original project
-Before downloading my code, you'll want to first download hzeller's code.
-Follow the instructions from the [Original README](https://github.com/hzeller/flaschen-taschen#tutorial-getting-started) to check out the code before proceeding to step 2.
-
-To check out the code under Linux:
+#### Check out the project
+This project uses the API provided in the `flaschen-taschen` project. We use
+it in a sub-module, so we have to check out with the `--recursive` option:
 
 ```
-$ git clone --recursive https://github.com/hzeller/flaschen-taschen.git
-``` 
-
-If you're on a Mac, you may want to download the ```mac-os-compilable``` branch instead, but beware it may also be out-of-date:
-
-```
-$ git clone --recursive -b mac-os-compilable https://github.com/hzeller/flaschen-taschen.git
-``` 
-
-#### 2. Check out these demos
-
-Next cd into the directory and download the demo code:
-
-```
-$ cd flaschen-taschen
-$ git clone https://github.com/cgorringe/ft-demos.git
+  git clone --recursive https://github.com/cgorringe/ft-demos
 ```
 
 Either make & run the server locally, or use the remote servers (see original README). Set up your display using the environment var:
