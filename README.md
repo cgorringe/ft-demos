@@ -55,6 +55,7 @@ $ ./random-dots
 8. fractal - zooming Mandelbrot fractal
 9. midi - converts a midi bytestream into a player piano demo of scrolling dots
 10. life - Conway's Game of Life
+11. maze - maze generator
 
 
 ### Noisebridge hosts
