@@ -51,7 +51,6 @@
 #include <string.h>
 #include <signal.h>
 #include <stack>
-// using namespace std;
 
 // Defaults                      large  small
 #define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
@@ -143,16 +142,12 @@ int cmdLine(int argc, char *argv[]) {
         case 'c':  // initial maze color
             if (sscanf(optarg, "%02x%02x%02x", &opt_fg_R, &opt_fg_G, &opt_fg_B) != 3) {
                 opt_fg_R=0, opt_fg_G=0, opt_fg_B=0;
-                //fprintf(stderr, "Color parse error\n");
-                //return usage(argv[0]);
             }
             opt_fgcolor = true;
             break;
         case 'v':  // visited maze color
             if (sscanf(optarg, "%02x%02x%02x", &opt_vc_R, &opt_vc_G, &opt_vc_B) != 3) {
                 opt_vc_R=0, opt_vc_G=0, opt_vc_B=0;
-                //fprintf(stderr, "Color parse error\n");
-                //return usage(argv[0]);
             }
             opt_vcolor = true;
             break;
@@ -193,7 +188,6 @@ void clearArray( const int width, const int height, uint8_t some_array[] ) {
     }
 }
 
-
 /*
     Using the simple Depth-first search algorithm.
 
@@ -203,8 +197,7 @@ void clearArray( const int width, const int height, uint8_t some_array[] ) {
     3. If that neighbor hasn't been visited, remove the wall between this cell and that neighbor, 
        and then recurse with that neighbor as the current cell.
 
-    NOTE: instead of calling a recursive function, I should create a stack to store pos_x & pos_y
-    so that I can use the loop in main()
+    NOTE: Using a stack instead of recursion to make use of the main() event loop.
 */
 
 int mazePos2PixelIndex(Position pos, int px_width) {
@@ -220,16 +213,12 @@ int wallIndexBetweenPositions(Position pos1, Position pos2, int px_width) {
 void drawMaze(std::stack<Position> &cell_stack, int px_width, int px_height, uint8_t pixels[]) {
 
     if ( cell_stack.empty() ) { 
-        //printf("cell_stack empty\n");  // DEBUG
         return;
     }
 
     int maze_width = (px_width / 2.0f) + 0.5;
     int maze_height = (px_height / 2.0f) + 0.5;
     Position pos = cell_stack.top();
-
-    //int stack_size = cell_stack.size();
-    //printf("top pos: (%d, %d); size: %d \n", pos.x, pos.y, stack_size);  // DEBUG
 
     // mark current pos as forground
     int cur_idx = mazePos2PixelIndex(pos, px_width);
@@ -258,21 +247,15 @@ void drawMaze(std::stack<Position> &cell_stack, int px_width, int px_height, uin
     // pick a random neighbor
     if (n > 0) {
         int rand_idx = randomInt(0, n - 1);
-        //printf("rand_idx: %d of %d\n", rand_idx, n);  // DEBUG
 
         // draw wall
         wall_idx = wallIndexBetweenPositions(pos, neighbor[rand_idx], px_width);
         pixels[wall_idx] = 1;
 
         cell_stack.push( neighbor[rand_idx] );
-
-        //printf("neighbor[rand_idx] = (%d, %d)\n", neighbor[rand_idx].x, neighbor[rand_idx].y ); // DEBUG
-        //printf("new size1: %lu \n", cell_stack.size() );  // DEBUG
     }
     else {
         // no neighbors left
-        //printf("no neighbors\n");  // DEBUG
-
         // mark pos as visited then pop off stack
         pixels[cur_idx] = 2;
         cell_stack.pop();
@@ -284,7 +267,6 @@ void drawMaze(std::stack<Position> &cell_stack, int px_width, int px_height, uin
             pixels[wall_idx] = 2;
         }
     }
-
 }
 
 int main(int argc, char *argv[]) {
@@ -331,10 +313,6 @@ int main(int argc, char *argv[]) {
     Position maze_pos = Position( randomInt(0, maze_width - 1), randomInt(0, maze_height - 1) );
     cell_stack.push(maze_pos);
 
-    // TEST: draw initial maze position
-    //int temp_idx = mazePos2PixelIndex(maze_pos, opt_width);
-    //pixels[temp_idx] = 1;
-
     // handle break
     signal(SIGTERM, InterruptHandler);
     signal(SIGINT, InterruptHandler);
@@ -342,14 +320,9 @@ int main(int argc, char *argv[]) {
     // other vars
     int count = 0, colr = 0;
     time_t starttime = time(NULL);
-    //time_t respawn_time = starttime;
 
     do {
-        //runGameOfLife(opt_width, opt_height, pixels);
-
-        // TODO: call non-recursive stack-based maze function
         drawMaze(cell_stack, opt_width, opt_height, pixels);
-        //printf("new size2: %lu \n", cell_stack.size() );  // DEBUG
 
         // set pixel color if cycling through palette
         if (!opt_vcolor) {
