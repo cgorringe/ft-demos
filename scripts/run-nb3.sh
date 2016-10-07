@@ -25,14 +25,11 @@ while :; do
   sleep 60
 
   # fractal
-  ../fractal $G1 -l2 -t120 &
+  ../fractal $G1 -l2 -t179 &
   sleep 120
 
-  # plasma
-  sleep 30
-
-  # maze over plasma
-  ./maze -l3 -v0 -b0 -t45 &
+  # maze over fractal
+  ../maze $G1 -l3 -v0 -b0 -t60 &
   sleep 60
 
   # lines
@@ -52,7 +49,7 @@ while :; do
   sleep 120
 
   # maze over plasma
-  ./maze -l3 -v0 -b0 -t90 &
-  sleep 90
+  ../maze $G1 -l3 -v0 -b0 -t60 &
+  sleep 60
 
 done
