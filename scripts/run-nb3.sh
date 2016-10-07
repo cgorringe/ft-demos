@@ -32,7 +32,7 @@ while :; do
   sleep 30
 
   # maze over plasma
-  ./maze -l3 -v0 -b0 -t45
+  ./maze -l3 -v0 -b0 -t45 &
   sleep 60
 
   # lines
@@ -45,14 +45,14 @@ while :; do
   ../quilt $G2 -l3 -t30 &
   sleep 30
   # clears black box
-  ../black $G2 -l2
+  ../black $G2 -l2 &
 
   # game of life
   ../life $G1 -l2 -c0 -b0 -r30 -t120 &
   sleep 120
 
   # maze over plasma
-  ./maze -l3 -v0 -b0 -t90
+  ./maze -l3 -v0 -b0 -t90 &
   sleep 90
 
 done
