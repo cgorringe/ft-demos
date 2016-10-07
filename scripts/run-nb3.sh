@@ -16,12 +16,12 @@ F1=../fonts/5x5.bdf
 while :; do
 
   # plasma
-  sleep 180
+  sleep 120
 
   # blur + hack
   ../blur $G1 -l2 -t60 bolt &
   sleep 60
-  ../blur $G1 -l2 -t60 boxes &
+  ../blur $G1 -l3 -t60 boxes &
   sleep 60
 
   # fractal
@@ -44,7 +44,8 @@ while :; do
   # quilt
   ../quilt $G2 -l3 -t30 &
   sleep 30
-  ../black $G2 -l3
+  # clears black box
+  ../black $G2 -l2
 
   # game of life
   ../life $G1 -l2 -c0 -b0 -r30 -t120 &
