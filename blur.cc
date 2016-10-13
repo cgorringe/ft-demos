@@ -61,6 +61,9 @@
 #define PALETTE_MAX 3  // 1=Nebula, 2=Fire, 3=Bluegreen
 #define DEMO 0         // 0=bolt, 1=boxes
 
+const int kDemoBolt = 0;
+const int kDemoBoxes = 1;
+
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
     interrupt_received = true;
@@ -146,10 +149,10 @@ int cmdLine(int argc, char *argv[]) {
     // retrieve arg text
     const char *text = argv[optind];
     if (text && strncmp(text, "bolt", 4) == 0) {
-        opt_demo = 0;
+        opt_demo = kDemoBolt;
     }
     else if (text && strncmp(text, "boxes", 5) == 0) {
-        opt_demo = 1;
+        opt_demo = kDemoBoxes;
     }
     else {
         fprintf(stderr, "Missing 'bolt', or 'boxes'\n");
@@ -262,6 +265,9 @@ void drawRandomBolt(int width, int height, uint8_t pixels[]) {
     }
 }
 
+// This one works, but requires the following be called prior which results in a black right & bottom border:
+// drawBox(0, 0, opt_width-1, opt_height-1, 0, opt_width, opt_height, pixels);
+
 void blur1(int width, int height, uint8_t pixels[]) {
 
     int size = width * (height - 1) - 1;
@@ -287,6 +293,36 @@ void blur2(int width, int height, uint8_t pixels[]) {
         if (dot > 0) { dot--; }
         pixels[i] = dot;
     }
+}
+
+// Blur that works without the black border. Use this one.
+void blur3(int width, int height, uint8_t pixels[]) {
+
+    // blur effect
+    uint8_t dot;
+    int i=0;
+    for (int y=0; y < height - 1; y++) {
+        for (int x=0; x < width - 1; x++) {
+            dot = (uint8_t)((pixels[i] + pixels[i + 1] + pixels[i + width] + pixels[i + width + 1]) >> 2) & 0xFF;
+            dot = (dot <= 8) ? 0 : dot - 8;
+            pixels[i] = dot;
+            i++;
+        }
+        // blur right border pixel
+        dot = (uint8_t)((pixels[i] + pixels[i + width]) >> 2) & 0xFF;
+        dot = (dot <= 8) ? 0 : dot - 8;
+        pixels[i] = dot;
+        i++;
+    }
+    // blur bottom border pixels
+    for (int x=0; x < width - 1; x++) {
+        dot = (uint8_t)((pixels[i] + pixels[i + 1]) >> 2) & 0xFF;
+        dot = (dot <= 8) ? 0 : dot - 8;
+        pixels[i] = dot;
+        i++;
+    }
+    // last lower-right corner pixel
+    pixels[i] = 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -328,14 +364,13 @@ int main(int argc, char *argv[]) {
 
         if ((count % 2) == 0) {
             switch (opt_demo) {
-                case 0: drawRandomBolt(opt_width, opt_height, pixels); break;
-                case 1: drawRandomBox(opt_width, opt_height, pixels); break;
+                case kDemoBolt: drawRandomBolt(opt_width, opt_height, pixels); break;
+                case kDemoBoxes: drawRandomBox(opt_width, opt_height, pixels); break;
             }
         }
 
-        // draw black border & blur on every frame
-        drawBox(0, 0, opt_width-1, opt_height-1, 0, opt_width, opt_height, pixels);
-        blur1(opt_width, opt_height, pixels);
+        // blur on every frame
+        blur3(opt_width, opt_height, pixels);
 
         // copy pixel buffer to canvas
         int dst = 0;
