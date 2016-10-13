@@ -70,6 +70,10 @@ static void InterruptHandler(int signo) {
     interrupt_received = true;
 }
 
+const int kColorBG = 0;
+const int kColorMaze = 1;
+const int kColorVisited = 2;
+
 // ------------------------------------------------------------------------------------------
 // Command Line Options
 
@@ -222,26 +226,26 @@ void drawMaze(std::stack<Position> &cell_stack, int px_width, int px_height, uin
 
     // mark current pos as forground
     int cur_idx = mazePos2PixelIndex(pos, px_width);
-    pixels[cur_idx] = 1;
+    pixels[cur_idx] = kColorMaze;
 
     // create list of neighbors not yet visited, handling edge cases
     int n=0, temp_idx, wall_idx;
     Position neighbor[4];
     if (pos.y > 0) { 
         temp_idx = (((pos.y - 1) * 2 * px_width) + (pos.x * 2));
-        if (pixels[temp_idx] == 0) { neighbor[n++] = Position(pos.x, pos.y - 1); }
+        if (pixels[temp_idx] == kColorBG) { neighbor[n++] = Position(pos.x, pos.y - 1); }
     }
     if (pos.y < maze_height - 1) { 
         temp_idx = (((pos.y + 1) * 2 * px_width) + (pos.x * 2)); 
-        if (pixels[temp_idx] == 0) { neighbor[n++] = Position(pos.x, pos.y + 1); }
+        if (pixels[temp_idx] == kColorBG) { neighbor[n++] = Position(pos.x, pos.y + 1); }
     }
     if (pos.x > 0) { 
         temp_idx = ((pos.y * 2 * px_width) + ((pos.x - 1) * 2)); 
-        if (pixels[temp_idx] == 0) { neighbor[n++] = Position(pos.x - 1, pos.y); }
+        if (pixels[temp_idx] == kColorBG) { neighbor[n++] = Position(pos.x - 1, pos.y); }
     }
     if (pos.x < maze_width - 1) { 
         temp_idx = ((pos.y * 2 * px_width) + ((pos.x + 1) * 2)); 
-        if (pixels[temp_idx] == 0) { neighbor[n++] = Position(pos.x + 1, pos.y); }
+        if (pixels[temp_idx] == kColorBG) { neighbor[n++] = Position(pos.x + 1, pos.y); }
     }
 
     // pick a random neighbor
@@ -250,21 +254,21 @@ void drawMaze(std::stack<Position> &cell_stack, int px_width, int px_height, uin
 
         // draw wall
         wall_idx = wallIndexBetweenPositions(pos, neighbor[rand_idx], px_width);
-        pixels[wall_idx] = 1;
+        pixels[wall_idx] = kColorMaze;
 
         cell_stack.push( neighbor[rand_idx] );
     }
     else {
         // no neighbors left
         // mark pos as visited then pop off stack
-        pixels[cur_idx] = 2;
+        pixels[cur_idx] = kColorVisited;
         cell_stack.pop();
 
         // draw visited wall
         if ( !cell_stack.empty() ) { 
             Position pos2 = cell_stack.top();
             wall_idx = wallIndexBetweenPositions(pos, pos2, px_width);
-            pixels[wall_idx] = 2;
+            pixels[wall_idx] = kColorVisited;
         }
     }
 }
@@ -299,14 +303,15 @@ int main(int argc, char *argv[]) {
     canvas.Clear();
 
     // pixel buffer
-    uint8_t pixels[opt_width * opt_height];
-    clearArray(opt_width, opt_height, pixels);
+    int psize = opt_width * opt_height;
+    uint8_t pixels[psize];
+    for (int i=0; i < psize; i++) { 
+        pixels[i] = kColorBG;
+    }
 
     // setup maze
     int maze_width = opt_width / 2;
     int maze_height = opt_height / 2;
-    uint8_t maze[maze_width * maze_height];
-    clearArray(maze_width, maze_height, maze);
     std::stack<Position> cell_stack;
 
     // random initial position
@@ -333,7 +338,8 @@ int main(int argc, char *argv[]) {
         int dst = 0;
         for (int y=0; y < opt_height; y++) {
             for (int x=0; x < opt_width; x++) {
-                canvas.SetPixel( x, y, ((pixels[dst] == 2) ? vc_color : ((pixels[dst] == 1) ? fg_color : bg_color)) );
+                canvas.SetPixel( x, y, ((pixels[dst] == kColorVisited) ? 
+                    vc_color : ((pixels[dst] == kColorMaze) ? fg_color : bg_color)) );
                 dst++;
             }
         }
