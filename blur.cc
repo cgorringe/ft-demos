@@ -63,6 +63,8 @@
 
 const int kDemoBolt = 0;
 const int kDemoBoxes = 1;
+const int kDemoCircles = 2;
+const int kDemoTarget = 3;
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -86,7 +88,7 @@ int opt_demo = DEMO;
 int usage(const char *progname) {
 
     fprintf(stderr, "Blur (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
-    fprintf(stderr, "Usage: %s [options] {bolt|boxes}\n", progname);
+    fprintf(stderr, "Usage: %s [options] {bolt|boxes|circles|target}\n", progname);
     fprintf(stderr, "Options:\n"
         "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
         "\t-l <layer>     : Layer 0-15. (default 1)\n"
@@ -154,8 +156,14 @@ int cmdLine(int argc, char *argv[]) {
     else if (text && strncmp(text, "boxes", 5) == 0) {
         opt_demo = kDemoBoxes;
     }
+    else if (text && strncmp(text, "circles", 7) == 0) {
+        opt_demo = kDemoCircles;
+    }
+    else if (text && strncmp(text, "target", 6) == 0) {
+        opt_demo = kDemoTarget;
+    }
     else {
-        fprintf(stderr, "Missing 'bolt', or 'boxes'\n");
+        fprintf(stderr, "Missing 'bolt', 'boxes', etc...\n");
         return usage(argv[0]);
     }
 
@@ -250,6 +258,58 @@ void drawRandomBox(int width, int height, uint8_t pixels[]) {
     int y2 = randomInt(y1, height - 1);
     uint8_t color = 0xFF;
     drawBox(x1, y1, x2, y2, color, width, height, pixels);
+}
+
+// use this to make sure pixel is within bounds
+void setPixel(int x0, int y0, uint8_t color, int width, int height, uint8_t pixels[]) {
+
+    if ((x0 >= 0) && (x0 < width) && (y0 >= 0) && (y0 < height)) {
+        pixels[ y0 * width + x0] = color;
+    }
+}
+
+void drawCircle(int x0, int y0, int radius, uint8_t color, int width, int height, uint8_t pixels[]) {
+
+    // based off code from ft/api/lib/graphics.cc
+    int x = radius, y = 0;
+    int radiusError = 1 - x;
+
+    while (y <= x) {
+        setPixel(  x + x0,  y + y0, color, width, height, pixels );
+        setPixel(  y + x0,  x + y0, color, width, height, pixels );
+        setPixel( -x + x0,  y + y0, color, width, height, pixels );
+        setPixel( -y + x0,  x + y0, color, width, height, pixels );
+        setPixel( -x + x0, -y + y0, color, width, height, pixels );
+        setPixel( -y + x0, -x + y0, color, width, height, pixels );
+        setPixel(  x + x0, -y + y0, color, width, height, pixels );
+        setPixel(  y + x0, -x + y0, color, width, height, pixels );
+        y++;
+        if (radiusError < 0) {
+            radiusError += 2 * y + 1;
+        } 
+        else {
+            x--;
+            radiusError += 2 * (y - x + 1);
+        }
+    }
+}
+
+void drawRandomCircle(int width, int height, uint8_t pixels[]) {
+
+    int x0 = randomInt(0, width - 2);
+    int y0 = randomInt(0, height - 2);
+    int radius = randomInt(2, width / 3);
+    uint8_t color = 0xFF;
+    drawCircle(x0, y0, radius, color, width, height, pixels);
+}
+
+void drawRandomTarget(int width, int height, uint8_t pixels[]) {
+
+    int x0 = width / 2;
+    int y0 = width / 2;
+    int radius = randomInt(2, width / 2);
+    uint8_t color = 0xFF;
+    drawCircle(x0, y0, radius, color, width, height, pixels);
 }
 
 void drawRandomBolt(int width, int height, uint8_t pixels[]) {
@@ -366,6 +426,8 @@ int main(int argc, char *argv[]) {
             switch (opt_demo) {
                 case kDemoBolt: drawRandomBolt(opt_width, opt_height, pixels); break;
                 case kDemoBoxes: drawRandomBox(opt_width, opt_height, pixels); break;
+                case kDemoCircles: drawRandomCircle(opt_width, opt_height, pixels); break;
+                case kDemoTarget: drawRandomTarget(opt_width, opt_height, pixels); break;
             }
         }
 
