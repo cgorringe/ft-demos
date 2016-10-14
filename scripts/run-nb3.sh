@@ -18,11 +18,13 @@ while :; do
   # plasma
   sleep 120
 
-  # blur + hack
-  ../blur $G1 -l2 -t60 bolt &
-  sleep 60
-  ../blur $G1 -l3 -t60 boxes &
-  sleep 60
+  # blur
+  ../blur $G1 -l3 -t40 bolt &
+  sleep 40
+  ../blur $G1 -l2 -t40 boxes &
+  sleep 40
+  ../blur $G1 -l3 -t40 circles &
+  sleep 40
 
   # fractal
   ../fractal $G1 -l2 -t179 &
