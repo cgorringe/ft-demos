@@ -54,4 +54,8 @@ while :; do
   ../maze $G1 -l3 -v0 -b0 -t60 &
   sleep 60
 
+  # Sierpinski rain over plasma
+  ../sierpinski_rain.py -t 60 -x -c blacktransp &
+  sleep 60
+
 done
