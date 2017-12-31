@@ -18,6 +18,7 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 ![](img/life.jpg)
 ![](img/maze.jpg)
 
+I've also created a Music Module Player for the Flaschen Taschen which you can see at [ft-mod](https://github.com/cgorringe/ft-mod).
 
 ### Install How-to
 
@@ -45,21 +46,21 @@ $ make all
 $ ./random-dots
 ```
 
+### Demos provided
+
 Use the `-?` command-line option on any demo program to list it's options.
 
-
-### Demos provided
-1. random-dots
-2. quilt
-3. nb-logo - logo that traverses the border
-4. plasma - multi-colored plasma
-5. blur bolt or boxes - burred simulated sound waves or rectangles
-6. lines - like an old-school screensaver
-7. hack - rotating letters + blur effect
-8. fractal - zooming Mandelbrot fractal
-9. midi - converts a midi bytestream into a player piano demo of scrolling dots
-10. life - Conway's Game of Life
-11. maze - maze generator
+1. ```random-dots```
+2. ```quilt```
+3. ```nb-logo``` - logo that traverses the border
+4. ```plasma``` - multi-colored plasma
+5. ```blur bolt``` or ```boxes``` - burred simulated sound waves or rectangles
+6. ```lines``` - like an old-school screensaver
+7. ```hack``` - rotating letters + blur effect
+8. ```fractal``` - zooming Mandelbrot fractal
+9. ```midi``` - converts a midi bytestream into a player piano demo of scrolling dots
+10. ```life``` - Conway's Game of Life
+11. ```maze``` - maze generator
 
 
 ### Noisebridge hosts
