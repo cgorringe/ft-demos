@@ -4,6 +4,8 @@ By [Carl Gorringe](http://carl.gorringe.org)
 
 Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Project](https://noisebridge.net/wiki/Flaschen_Taschen), based on [code written by hzeller](https://github.com/hzeller/flaschen-taschen).
 
+I've also created [*ft-mod*, a Music Module Player](https://github.com/cgorringe/ft-mod) for the Flaschen Taschen.
+
 ![](img/random-dots.jpg)
 ![](img/quilt.jpg)
 ![](img/nb-logo.jpg)
@@ -18,7 +20,6 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 ![](img/life.jpg)
 ![](img/maze.jpg)
 
-I've also created a Music Module Player for the Flaschen Taschen which you can see at [ft-mod](https://github.com/cgorringe/ft-mod).
 
 ### Install How-to
 
