@@ -109,7 +109,7 @@ int opt_height = DISPLAY_HEIGHT;
 int opt_xoff=0, opt_yoff=0;
 int opt_delay  = DELAY;
 int opt_palette = -1;  // default cycles
-float brightness_factor = 1.0f;
+float opt_brightness = 1.0f;
 
 int usage(const char *progname) {
 
@@ -121,7 +121,7 @@ int usage(const char *progname) {
         "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
         "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
-        "\t-b <brightness>: Factor 0..1\n"
+        "\t-b <brightness>: Brightness factor 0.0 to 1.0. (default 1.0)\n"
         "\t-p <palette>   : Set color palette to: (default cycles)\n"
         "\t                  0=Rainbow 1=Nebula  2=Fire   3=Bluegreen 4=RGB\n"
         "\t                  5=Magma   6=Inferno 7=Plasma 8=Viridis\n"
@@ -172,8 +172,8 @@ int cmdLine(int argc, char *argv[]) {
             }
             break;
         case 'b': // brightness
-            if (sscanf(optarg, "%f", &brightness_factor) != 1 || brightness_factor < 0 || brightness_factor > 1.0) {
-                fprintf(stderr, "Invalid brightness factor %.1f\n", brightness_factor);
+            if (sscanf(optarg, "%f", &opt_brightness) != 1 || opt_brightness < 0 || opt_brightness > 1.0) {
+                fprintf(stderr, "Invalid brightness factor %.1f\n", opt_brightness);
                 return usage(argv[0]);
             }
             break;
@@ -199,9 +199,9 @@ void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, i
 
 void convertFloatPalette(RGBFloatCol float_palette[], Color palette[]) {
     for (int i = 0; i < 256; ++i) {
-        palette[i] = { (int)(float_palette[i].r * 256),
-                       (int)(float_palette[i].g * 256),
-                       (int)(float_palette[i].b * 256) };
+        palette[i].r = (uint8_t)(float_palette[i].r * 256);
+        palette[i].g = (uint8_t)(float_palette[i].g * 256);
+        palette[i].b = (uint8_t)(float_palette[i].b * 256);
     }
 }
 
@@ -369,9 +369,9 @@ int main(int argc, char *argv[]) {
                 const float normalized = (value - lowest_value) / value_range;
                 const uint8_t palette_entry = round(normalized * 255);
                 Color c = palette[palette_entry];
-                c.r *= brightness_factor;
-                c.g *= brightness_factor;
-                c.b *= brightness_factor;
+                c.r *= opt_brightness;
+                c.g *= opt_brightness;
+                c.b *= opt_brightness;
                 canvas.SetPixel(x, y, c);
             }
         }
