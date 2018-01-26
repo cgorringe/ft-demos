@@ -327,6 +327,9 @@ int main(int argc, char *argv[]) {
 
     time_t starttime = time(NULL);
 
+    float lowest_value = 100;   // Finding range below.
+    float higest_value = -100;
+
     do {
         // set new color palette
         if ( ((count % 2000) == 0) && (opt_palette < 0) ) {
@@ -343,9 +346,6 @@ int main(int argc, char *argv[]) {
         y1 = hh + round(hh * sin( count / 123.0 / slowness ));
         y2 = hh + round(hh * cos(-count /  75.0 / slowness ));
         y3 = hh + round(hh * cos(-count / 108.0 / slowness ));
-
-        float lowest_value = 100;   // Finding range below.
-        float higest_value = -100;
 
         // Write plasma to pixel buffer, still as float. Keep track of range.
         for (int y=0; y < opt_height; y++) {
