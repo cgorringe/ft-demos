@@ -180,14 +180,14 @@ void drawNotes(uint8_t notes[], UDPFlaschenTaschen &canvas) {
     int width = canvas.width();
     int height = canvas.height();
     Color color(opt_r, opt_g, opt_b);
-    //int v;
+    int v;
 
     if (width > 120) { return; } // never happens
     int i = 60 - (width >> 1);  // center on middle-C (60)
 
     for (int x=0; x < width; x++) {
-        // v = notes[i] * 2;
-        // color = Color(0, v, 0);  // not used
+        v = notes[i] * 2;
+        color = Color(opt_r * v, opt_g * v, opt_b * v);
         canvas.SetPixel(x, height-1, color);
         i++;
     }
