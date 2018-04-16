@@ -65,6 +65,10 @@
 #define Z_LAYER 14       // (0-15) 0=background
 #define DELAY 50
 
+const int kDemoScroll = 0;
+const int kDemoAcross = 1;
+const int kDemoBoxes = 2;
+
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
     interrupt_received = true;
@@ -82,6 +86,7 @@ int opt_height = DISPLAY_HEIGHT;
 int opt_xoff=0, opt_yoff=0;
 int opt_delay  = DELAY;
 int opt_r=0x00, opt_g=0xFF, opt_b=0x00;
+int opt_demo = kDemoScroll;
 
 int usage(const char *progname) {
 
@@ -144,6 +149,22 @@ int cmdLine(int argc, char *argv[]) {
             return usage(argv[0]);
         }
     }
+
+    // retrieve arg text
+    const char *text = argv[optind];
+    if (text && strncmp(text, "scroll", 6) == 0) {
+        opt_demo = kDemoScroll;
+    }
+    else if (text && strncmp(text, "across", 6) == 0) {
+        opt_demo = kDemoAcross;
+    }
+    else if (text && strncmp(text, "boxes", 5) == 0) {
+        opt_demo = kDemoBoxes;
+    }
+    else {
+        opt_demo = kDemoScroll;
+    }
+
     return 0;
 }
 
@@ -175,23 +196,60 @@ void scrollUp(UDPFlaschenTaschen &canvas) {
 // Only draws number of notes = to canvas width, centered on middle-C. Draws on last row.
 // TODO: color palette
 
-void drawNotes(uint8_t notes[], UDPFlaschenTaschen &canvas) {
+void drawScroll(uint8_t notes[], UDPFlaschenTaschen &canvas) {
 
     int width = canvas.width();
     int height = canvas.height();
     Color color(opt_r, opt_g, opt_b);
-    int v;
+    int v, i, x, w;
 
-    if (width > 120) { return; } // never happens
-    int i = 60 - (width >> 1);  // center on middle-C (60)
+    if (width <= 120) {
+        // more notes than width of display
+        i = 60 - (width >> 1);  // center on middle-C (60)
+        x = 0;
+    }
+    else {
+        // fewer notes than width of display (NOT TESTED)
+        i = 0;
+        x = (width >> 1) - 60;
+    }
+    w = x + width;
 
-    for (int x=0; x < width; x++) {
+    while (x < w) {
         v = notes[i] * 2;
         color = Color((opt_r * v) >> 8, (opt_g * v) >> 8, (opt_b * v) >> 8);
         canvas.SetPixel(x, height-1, color);
-        i++;
+        i++; x++;
     }
 }
+
+void drawAcross(uint8_t notes[], UDPFlaschenTaschen &canvas, int count) {
+
+    int width = canvas.width();
+    int height = canvas.height();
+    Color color(opt_r, opt_g, opt_b);
+    int x = count % width;
+    int i, y, v;
+
+    if (height <= 120) {
+        // more notes than display height
+        i = 60 - (height >> 1); // center on middle-C (60)
+        y = 0;
+    }
+    else {
+        // fewer notes than display height (NOT TESTED)
+        i = 0;
+        y = (height >> 1) - 60;
+    }
+    int h = y + height;
+    while (y < h) {
+        v = notes[i] * 2;  // since notes[] is 0-127
+        color = Color((opt_r * v) >> 8, (opt_g * v) >> 8, (opt_b * v) >> 8);
+        canvas.SetPixel(x, height - y, color);
+        i++; y++;
+    }
+}
+
 
 // note = 0 to 127
 void noteOn(uint8_t note, uint8_t velocity, uint8_t channel, uint8_t notes[]) {
@@ -328,8 +386,17 @@ int main(int argc, char *argv[]) {
 
         readMidi(STDIN_FILENO, notes, opt_delay);
 
-        scrollUp(canvas);
-        drawNotes(notes, canvas);
+        switch (opt_demo) {
+            case kDemoScroll:
+                scrollUp(canvas);
+                drawScroll(notes, canvas);
+                break;
+            case kDemoAcross:
+                drawAcross(notes, canvas, count);
+                break;
+            case kDemoBoxes:
+                break;
+        }
 
         // send canvas
         canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
