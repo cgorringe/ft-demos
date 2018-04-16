@@ -187,7 +187,7 @@ void drawNotes(uint8_t notes[], UDPFlaschenTaschen &canvas) {
 
     for (int x=0; x < width; x++) {
         v = notes[i] * 2;
-        color = Color(opt_r * v, opt_g * v, opt_b * v);
+        color = Color((opt_r * v) >> 8, (opt_g * v) >> 8, (opt_b * v) >> 8);
         canvas.SetPixel(x, height-1, color);
         i++;
     }
