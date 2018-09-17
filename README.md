@@ -60,6 +60,7 @@ Use the `-?` command-line option on any demo program to list it's options.
 9. midi - converts a midi bytestream into a player piano demo of scrolling dots
 10. life - Conway's Game of Life
 11. maze - maze generator
+12. sierpinski - Spierpinski's Triangle
 
 
 ### Noisebridge hosts
