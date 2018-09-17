@@ -6,7 +6,7 @@
 // 5/2/2016
 //
 // Displays animated plasma effect on the Flaschen Taschen.
-// This version uses anti-aliasing to smooth out jittering by 
+// This version uses anti-aliasing to smooth out jittering by
 // supersampling by 4x and down-sampling to the display resolution.
 //
 // How to run:
@@ -55,6 +55,8 @@
 #include <string.h>
 #include <signal.h>
 
+#include "fancy-colormaps.h"
+
 namespace {
 // A two-dimensional array, essentially. A bit easier to use than manually
 // calculating array positions.
@@ -86,7 +88,8 @@ private:
 #define DELAY 25              // Wait in ms. Determines frame rate.
 #define MOVE_SLOWNESS 100.0   // Slowness of move. More for slow.
 
-#define PALETTE_MAX 4  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB
+#define PALETTE_MAX 8  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB,
+                       // 5=Magma, 6=Inferno, 7=Plasma, 8=Viridis
 
 
 volatile bool interrupt_received = false;
@@ -106,6 +109,7 @@ int opt_height = DISPLAY_HEIGHT;
 int opt_xoff=0, opt_yoff=0;
 int opt_delay  = DELAY;
 int opt_palette = -1;  // default cycles
+float opt_brightness = 1.0f;
 
 int usage(const char *progname) {
 
@@ -117,8 +121,10 @@ int usage(const char *progname) {
         "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
         "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
+        "\t-b <brightness>: Brightness factor 0.0 to 1.0. (default 1.0)\n"
         "\t-p <palette>   : Set color palette to: (default cycles)\n"
-        "\t                  0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB\n"
+        "\t                  0=Rainbow 1=Nebula  2=Fire   3=Bluegreen 4=RGB\n"
+        "\t                  5=Magma   6=Inferno 7=Plasma 8=Viridis\n"
     );
     return 1;
 }
@@ -127,7 +133,7 @@ int cmdLine(int argc, char *argv[]) {
 
     // command line options
     int opt;
-    while ((opt = getopt(argc, argv, "?l:t:g:h:d:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "?l:t:g:h:d:p:b:")) != -1) {
         switch (opt) {
         case '?':  // help
             return usage(argv[0]);
@@ -165,6 +171,12 @@ int cmdLine(int argc, char *argv[]) {
                 return usage(argv[0]);
             }
             break;
+        case 'b': // brightness
+            if (sscanf(optarg, "%f", &opt_brightness) != 1 || opt_brightness < 0 || opt_brightness > 1.0) {
+                fprintf(stderr, "Invalid brightness factor %.1f\n", opt_brightness);
+                return usage(argv[0]);
+            }
+            break;
         default:
             return usage(argv[0]);
         }
@@ -182,6 +194,14 @@ void colorGradient(int start, int end, int r1, int g1, int b1, int r2, int g2, i
         palette[start + i].r = (uint8_t)(r1 + (r2 - r1) * k);
         palette[start + i].g = (uint8_t)(g1 + (g2 - g1) * k);
         palette[start + i].b = (uint8_t)(b1 + (b2 - b1) * k);
+    }
+}
+
+void convertFloatPalette(RGBFloatCol float_palette[], Color palette[]) {
+    for (int i = 0; i < 256; ++i) {
+        palette[i].r = (uint8_t)(float_palette[i].r * 256);
+        palette[i].g = (uint8_t)(float_palette[i].g * 256);
+        palette[i].b = (uint8_t)(float_palette[i].b * 256);
     }
 }
 
@@ -233,6 +253,18 @@ void setPalette(int num, Color palette[]) {
         colorGradient(  64, 127,   1,   1,   1,   0, 255,   0, palette );  // black -> green
         colorGradient( 128, 191,   1,   1,   1,   0,   0, 255, palette );  // black -> blue
         colorGradient( 192, 255,   1,   1,   1, 255, 255, 255, palette );  // black -> white
+        break;
+      case 5:
+        convertFloatPalette( kMagmaColors, palette );
+        break;
+      case 6:
+        convertFloatPalette( kInfernoColors, palette );
+        break;
+      case 7:
+        convertFloatPalette( kPlasmaColors, palette );
+        break;
+      case 8:
+        convertFloatPalette( kViridisColors, palette );
         break;
     }
 }
@@ -295,6 +327,9 @@ int main(int argc, char *argv[]) {
 
     time_t starttime = time(NULL);
 
+    float lowest_value = 100;   // Finding range below.
+    float higest_value = -100;
+
     do {
         // set new color palette
         if ( ((count % 2000) == 0) && (opt_palette < 0) ) {
@@ -311,9 +346,6 @@ int main(int argc, char *argv[]) {
         y1 = hh + round(hh * sin( count / 123.0 / slowness ));
         y2 = hh + round(hh * cos(-count /  75.0 / slowness ));
         y3 = hh + round(hh * cos(-count / 108.0 / slowness ));
-
-        float lowest_value = 100;   // Finding range below.
-        float higest_value = -100;
 
         // Write plasma to pixel buffer, still as float. Keep track of range.
         for (int y=0; y < opt_height; y++) {
@@ -336,10 +368,14 @@ int main(int argc, char *argv[]) {
                 // Normalize to [0..1]
                 const float normalized = (value - lowest_value) / value_range;
                 const uint8_t palette_entry = round(normalized * 255);
-                canvas.SetPixel(x, y, Color(palette[palette_entry]));
+                Color c = palette[palette_entry];
+                c.r *= opt_brightness;
+                c.g *= opt_brightness;
+                c.b *= opt_brightness;
+                canvas.SetPixel(x, y, c);
             }
         }
-        
+
         // send canvas
         canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
         canvas.Send();

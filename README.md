@@ -4,6 +4,8 @@ By [Carl Gorringe](http://carl.gorringe.org)
 
 Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Project](https://noisebridge.net/wiki/Flaschen_Taschen), based on [code written by hzeller](https://github.com/hzeller/flaschen-taschen).
 
+I've also created [*ft-mod*, a Music Module Player](https://github.com/cgorringe/ft-mod) for the Flaschen Taschen.
+
 ![](img/random-dots.jpg)
 ![](img/quilt.jpg)
 ![](img/nb-logo.jpg)
@@ -45,22 +47,22 @@ $ make all
 $ ./random-dots
 ```
 
+### Demos provided
+
 Use the `-?` command-line option on any demo program to list it's options.
 
-
-### Demos provided
-1. random-dots
-2. quilt
-3. nb-logo - logo that traverses the border
-4. plasma - multi-colored plasma
-5. blur bolt or boxes - burred simulated sound waves or rectangles
-6. lines - like an old-school screensaver
-7. hack - rotating letters + blur effect
-8. fractal - zooming Mandelbrot fractal
-9. midi - converts a midi bytestream into a player piano demo of scrolling dots
-10. life - Conway's Game of Life
-11. maze - maze generator
-12. sierpinski - Spierpinski's Triangle
+1. ```random-dots```
+2. ```quilt```
+3. ```nb-logo``` - logo that traverses the border
+4. ```plasma``` - multi-colored plasma
+5. ```blur bolt``` or ```boxes``` - burred simulated sound waves or rectangles
+6. ```lines``` - like an old-school screensaver
+7. ```hack``` - rotating letters + blur effect
+8. ```fractal``` - zooming Mandelbrot fractal
+9. ```midi``` - converts a midi bytestream into a player piano demo of scrolling dots
+10. ```life``` - Conway's Game of Life
+11. ```maze``` - maze generator
+12. ```sierpinski``` - Spierpinski's Triangle
 
 
 ### Noisebridge hosts
