@@ -90,8 +90,8 @@ int opt_demo = kDemoScroll;
 
 int usage(const char *progname) {
 
-    fprintf(stderr, "midi (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
-    fprintf(stderr, "Usage: cat /dev/midi | %s [options]\n", progname);
+    fprintf(stderr, "midi (c) 2016-2018 Carl Gorringe (carl.gorringe.org)\n");
+    fprintf(stderr, "Usage: cat /dev/midi | %s [options] {scroll|across|boxes}\n", progname);
     fprintf(stderr, "Options:\n"
         "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
         "\t-l <layer>     : Layer 0-15. (default 1)\n"
@@ -248,6 +248,19 @@ void drawAcross(uint8_t notes[], UDPFlaschenTaschen &canvas, int count) {
         canvas.SetPixel(x, height - y, color);
         i++; y++;
     }
+}
+
+// helper function for drawBoxes()
+void drawNoteLine(int aNote, int y, Color clr, UDPFlaschenTaschen &canvas) {
+
+    // aNote: 0=C, 1=C#, 2=D, 3=D#, 4=E, 5=F, 6=F#, 7=G, 8=G#, 9=A, 10=A#, 11=B
+
+    // TODO: draw 4 pixels per white key, 1 pixel per black key
+    //canvas.SetPixel(x, y, clr);
+}
+
+void drawBoxes(uint8_t notes[], UDPFlaschenTaschen &canvas) {
+
 }
 
 
