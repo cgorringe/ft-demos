@@ -16,7 +16,11 @@ F1=../fonts/5x5.bdf
 while :; do
 
   # plasma
-  sleep 120
+  sleep 60
+
+  # sierpinski over plasma
+  ../sierpinski $G1 -l2 -c0 -r30 -t60 &
+  sleep 60
 
   # blur
   ../blur $G1 -l3 -t40 bolt &
@@ -54,8 +58,8 @@ while :; do
   ../maze $G1 -l3 -v0 -b0 -t60 &
   sleep 60
 
-  # Sierpinski rain over plasma
-  ../sierpinski_rain.py -t 60 -x -c blacktransp &
-  sleep 60
+  # Sierpinski rain over plasma (not working on Raspi yet)
+  # ../sierpinski_rain.py -t 60 -x -c blacktransp &
+  # sleep 60
 
 done
