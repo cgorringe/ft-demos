@@ -19,8 +19,8 @@
 
 
 #include "udp-flaschen-taschen.h"
-
 #include "bdf-font.h"
+#include "config.h"
 
 #include <getopt.h>
 #include <signal.h>
@@ -32,10 +32,8 @@
 #include <time.h>
 #include <math.h>
 
-// Defaults                      large  small
-#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
-#define Z_LAYER 7      // (0-15) 0=background
+// Defaults
+#define Z_LAYER 4      // (0-15) 0=background
 #define DELAY 100
 #define PALETTE_MAX 3  // 1=Nebula, 2=Fire, 3=Bluegreen
 #define BLUR_DROP 32  // 8, 16

@@ -39,6 +39,7 @@
 //
 
 #include "udp-flaschen-taschen.h"
+#include "config.h"
 
 #include <getopt.h>
 #include <stdio.h>
@@ -51,9 +52,7 @@
 #include <string.h>
 #include <signal.h>
 
-// Defaults                      large  small
-#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+// Defaults
 #define Z_LAYER 2      // (0-15) 0=background
 #define DELAY 200
 #define NUM_DOTS 6

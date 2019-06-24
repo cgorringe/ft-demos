@@ -56,6 +56,7 @@
 #include <signal.h>
 
 #include "fancy-colormaps.h"
+#include "config.h"
 
 namespace {
 // A two-dimensional array, essentially. A bit easier to use than manually
@@ -81,9 +82,7 @@ private:
 };
 }  // namespace
 
-// Defaults                      large  small
-#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+// Defaults
 #define Z_LAYER 1      // (0-15) 0=background
 #define DELAY 25              // Wait in ms. Determines frame rate.
 #define MOVE_SLOWNESS 100.0   // Slowness of move. More for slow.

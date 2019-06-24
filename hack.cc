@@ -40,6 +40,7 @@
 
 #include "udp-flaschen-taschen.h"
 #include "hack_font.h"
+#include "config.h"
 
 #include <getopt.h>
 #include <stdio.h>
@@ -53,9 +54,7 @@
 #include <string>
 #include <signal.h>
 
-// Defaults                      large  small
-#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
+// Defaults
 #define Z_LAYER 7      // (0-15) 0=background
 #define DELAY 100
 #define PALETTE_MAX 3  // 1=Nebula, 2=Fire, 3=Bluegreen

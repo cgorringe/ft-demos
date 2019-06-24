@@ -49,8 +49,7 @@
 #include <string.h>
 #include <signal.h>
 
-#define DISPLAY_WIDTH  (9*5)  // large: 9*5
-#define DISPLAY_HEIGHT (7*5)  //        7*5
+#include "config.h"
 #define Z_LAYER 0      // (0-15) 0=background
 
 // ------------------------------------------------------------------------------------------

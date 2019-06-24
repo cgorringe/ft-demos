@@ -36,6 +36,7 @@
 //
 
 #include "udp-flaschen-taschen.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -44,9 +45,6 @@
 #include <math.h>
 #include <limits.h>
 
-//                               large  small
-#define DISPLAY_WIDTH  (9*5)  //  9*5    5*5
-#define DISPLAY_HEIGHT (7*5)  //  7*5    4*5
 #define Z_LAYER 8      // (0-15) 0=background
 #define PALETTE_MAX 3  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB
 #define DELAY 10
