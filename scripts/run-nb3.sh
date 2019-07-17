@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 #export FT_DISPLAY=10.20.0.40
+export FT_DISPLAY=127.0.0.1
 
 echo "Running Demo using layers 1-3..."
 
@@ -22,6 +23,10 @@ while :; do
 
   # plasma
   sleep 60
+
+  # matrix
+  ../matrix $G1 -l3 -t40 &
+  sleep 40
 
   # sierpinski over plasma
   ../sierpinski $G1 -l2 -c0 -r30 -t60 &
