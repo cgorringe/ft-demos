@@ -89,7 +89,7 @@ private:
 
 #define PALETTE_MAX 8  // 0=Rainbow, 1=Nebula, 2=Fire, 3=Bluegreen, 4=RGB,
                        // 5=Magma, 6=Inferno, 7=Plasma, 8=Viridis
-
+#define PALETTE_CYCLE 4  // max palette when cycling
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
         if ( ((count % 2000) == 0) && (opt_palette < 0) ) {
             setPalette(curPalette, palette);
             curPalette++;
-            if (curPalette > PALETTE_MAX) { curPalette = 0; }
+            if (curPalette > PALETTE_CYCLE) { curPalette = 0; }
         }
 
         // Move plasma with sine functions
