@@ -1,5 +1,7 @@
 // -*- mode: c++; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 //
+// TODO: Need to clean up unused options, and fix color options.
+//
 // matrix
 // Copyright (c) 2019 Carl Gorringe (carl.gorringe.org)
 // https://github.com/cgorringe/ft-demos
@@ -88,12 +90,12 @@ int usage(const char *progname) {
         "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
         "\t-l <layer>     : Layer 0-15. (default 2)\n"
         "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
-        "\t-r <seconds>   : Respawn random dots after given seconds.\n"
+//        "\t-r <seconds>   : Respawn random dots after given seconds.\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
-        "\t-d <delay>     : Delay between frames in milliseconds. (default 200)\n"
+        "\t-d <delay>     : Delay between frames in milliseconds. (default 50)\n"
         "\t-c <RRGGBB>    : Forground color in hex (-c0 = transparent, default cycles)\n"
         "\t-b <RRGGBB>    : Background color in hex (-b0 = #010101, default transparent)\n"
-        "\t-n <number>    : Initialize with 1/n random dots. (default 6)\n"
+//        "\t-n <number>    : Initialize with 1/n random dots. (default 6)\n"
     );
     return 1;
 }

@@ -58,7 +58,7 @@ while :; do
   ../quilt $G2 -l3 -t30 &
   sleep 30
   # clears black box
-  ../black $G2 -l2 &
+  ../black $G2 -l3 &
 
   # game of life
   ../life $G1 -l2 -c0 -b0 -r30 -t120 &
