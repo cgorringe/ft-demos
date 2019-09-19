@@ -4,11 +4,11 @@ CXXFLAGS=-Wall -O3 -I$(FLASCHEN_TASCHEN_API_DIR)/include -I.
 LDFLAGS=-L$(FLASCHEN_TASCHEN_API_DIR)/lib -lftclient
 FTLIB=$(FLASCHEN_TASCHEN_API_DIR)/lib/libftclient.a
 
-ALL=simple-example simple-animation random-dots quilt black plasma1 plasma2 plasma nb-logo blur lines hack fractal midi kbd2midi words life maze sierpinski matrix
+ALL=simple-example simple-animation random-dots quilt black plasma nb-logo blur lines hack fractal midi kbd2midi words life maze sierpinski matrix
 
 all : $(ALL)
 
-% : %.cc $(FTLIB)
+% : src/%.cc $(FTLIB)
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
 $(FTLIB):
