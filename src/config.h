@@ -12,7 +12,7 @@
 
 // Defaults
 #define DISPLAY_WIDTH  (9*5)
-#define DISPLAY_HEIGHT (8*5)  // use 7*5 for original flaschen-taschen
+#define DISPLAY_HEIGHT (7*5)  // use 7*5 for original flaschen-taschen
 
 
 #endif  // CONFIG_H

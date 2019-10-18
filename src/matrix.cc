@@ -215,21 +215,9 @@ int main(int argc, char *argv[]) {
     // seed the random generator
     srandom(time(NULL));
 
-/*
-    // set the color palette to a rainbow of colors
+    // set the matrix color palette
     Color palette[256];
-    colorGradient( 0,   31,  255, 0,   255, 0,   0,   255, palette );
-    colorGradient( 32,  63,  0,   0,   255, 0,   255, 255, palette );
-    colorGradient( 64,  95,  0,   255, 255, 0,   255,   0, palette );
-    colorGradient( 96,  127, 0,   255, 0,   127, 255,   0, palette );
-    colorGradient( 128, 159, 127, 255, 0,   255, 255,   0, palette );
-    colorGradient( 160, 191, 255, 255, 0,   255, 127,   0, palette );
-    colorGradient( 192, 223, 255, 127, 0,   255, 0,     0, palette );
-    colorGradient( 224, 255, 255, 0,   0,   255, 0,   255, palette );
-*/
-    // set the matrix color palette (TEST)
-    Color palette[256];
-    colorGradient(   0, 254,   0,   1,   0,   0, 255,   0, palette );
+    colorGradient(   0, 254,   0,   1,   0,   0, 255,   0, palette );  // green
     colorGradient( 254, 255,   0, 255,   0, 255, 255, 255, palette );
 
     // setup colors
@@ -248,8 +236,6 @@ int main(int argc, char *argv[]) {
     uint8_t pixels[ opt_width * opt_height ];
     for (int i=0; i < opt_width * opt_height; i++) { pixels[i] = 0; }  // clear pixel buffer
 
-    //initGameOfLife(opt_width, opt_height, pixels);
-
     // handle break
     signal(SIGTERM, InterruptHandler);
     signal(SIGINT, InterruptHandler);
@@ -260,8 +246,6 @@ int main(int argc, char *argv[]) {
     time_t respawn_time = starttime;
 
     do {
-        //runGameOfLife(opt_width, opt_height, pixels);
-
         if (count % 4 == 0) {
             drawRainPixel(opt_width, opt_height, pixels);
         }
@@ -272,15 +256,9 @@ int main(int argc, char *argv[]) {
         if (opt_respawn > 0) {
             if (difftime(time(NULL), respawn_time) > opt_respawn) {
                 respawn_time = time(NULL);
-                //initGameOfLife(opt_width, opt_height, pixels);
             }
         }
-/*
-        // set pixel color if cycling through palette
-        if (!opt_fgcolor) {
-            fg_color = palette[colr];
-        }
-*/
+
         // copy pixel buffer to canvas
         int dst = 0;
         for (int y=0; y < opt_height; y++) {

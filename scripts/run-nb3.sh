@@ -8,12 +8,12 @@ echo "Running Demo using layers 1-3..."
 cd `dirname $0`
 set -e
 
-# Old FT 9x7 crates
-# G1=-g45x35
-# G2=-g35x25+5+5
-# New FT 9x8 crates
-G1=-g45x40
-G2=-g35x30+5+5
+## Old FT 9x7 crates
+G1=-g45x35
+G2=-g35x25+5+5
+## New FT 9x8 crates w/ hole
+# G1=-g45x40
+# G2=-g35x30+5+5
 F1=../fonts/5x5.bdf
 
 # plasma timesout in 30 days (60 * 60 * 24 * 30)
