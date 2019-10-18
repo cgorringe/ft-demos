@@ -20,6 +20,7 @@ I've also created [*ft-mod*, a Music Module Player](https://github.com/cgorringe
 ![](img/life.jpg)
 ![](img/maze.jpg)
 ![](img/sierpinski.jpg)
+![](img/matrix.jpg)
 
 
 ### Install How-to
@@ -64,6 +65,7 @@ Use the `-?` command-line option on any demo program to list it's options.
 10. ```life``` - Conway's Game of Life
 11. ```maze``` - maze generator
 12. ```sierpinski``` - Sierpinski's Triangle
+13. ```matrix``` - Matrix Rain
 
 
 ### Noisebridge hosts
