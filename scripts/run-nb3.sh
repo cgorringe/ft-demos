@@ -25,7 +25,7 @@ while :; do
   sleep 60
 
   # matrix
-  ../matrix $G1 -l3 -t40 &
+  ../matrix $G1 -l3 -b0 -t40 &
   sleep 40
 
   # sierpinski over plasma

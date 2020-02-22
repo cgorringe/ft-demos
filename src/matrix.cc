@@ -78,8 +78,8 @@ int opt_height = DISPLAY_HEIGHT;
 int opt_xoff=0, opt_yoff=0;
 int opt_delay  = DELAY;
 bool opt_fgcolor = false, opt_bgcolor = false;
-int opt_fg_R=0, opt_fg_G=0, opt_fg_B=0;
-int opt_bg_R=0, opt_bg_G=0, opt_bg_B=0;
+int opt_fg_R=0, opt_fg_G=255, opt_fg_B=0;  // fg green
+int opt_bg_R=0, opt_bg_G=0, opt_bg_B=0;    // bg transparent
 int opt_num_dots = NUM_DOTS;
 
 int usage(const char *progname) {
@@ -93,7 +93,7 @@ int usage(const char *progname) {
 //        "\t-r <seconds>   : Respawn random dots after given seconds.\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
         "\t-d <delay>     : Delay between frames in milliseconds. (default 50)\n"
-        "\t-c <RRGGBB>    : Forground color in hex (-c0 = transparent, default cycles)\n"
+        "\t-c <RRGGBB>    : Forground color in hex (default green)\n"
         "\t-b <RRGGBB>    : Background color in hex (-b0 = #010101, default transparent)\n"
 //        "\t-n <number>    : Initialize with 1/n random dots. (default 6)\n"
     );
@@ -144,7 +144,7 @@ int cmdLine(int argc, char *argv[]) {
             break;
         case 'c':  // forground color
             if (sscanf(optarg, "%02x%02x%02x", &opt_fg_R, &opt_fg_G, &opt_fg_B) != 3) {
-                opt_fg_R=0, opt_fg_G=0, opt_fg_B=0;
+                //opt_fg_R=0, opt_fg_G=0, opt_fg_B=0;
                 //fprintf(stderr, "Color parse error\n");
                 //return usage(argv[0]);
             }
@@ -152,11 +152,11 @@ int cmdLine(int argc, char *argv[]) {
             break;
         case 'b':  // background color
             if (sscanf(optarg, "%02x%02x%02x", &opt_bg_R, &opt_bg_G, &opt_bg_B) != 3) {
-                opt_bg_R=1, opt_bg_G=1, opt_bg_B=1;
+                opt_bg_R=1, opt_bg_G=1, opt_bg_B=1;  // -b0 flag for black
             }
             opt_bgcolor = true;
             break;
-        case 'n':  // init with 1/n number of dots
+        case 'n':  // init with 1/n number of dots (REMOVE)
             if (sscanf(optarg, "%d", &opt_num_dots) != 1 || opt_num_dots < 2) {
                 fprintf(stderr, "Invalid number of dots '%s'\n", optarg);
                 return usage(argv[0]);
@@ -217,15 +217,9 @@ int main(int argc, char *argv[]) {
 
     // set the matrix color palette
     Color palette[256];
-    colorGradient(   0, 254,   0,   1,   0,   0, 255,   0, palette );  // green
-    colorGradient( 254, 255,   0, 255,   0, 255, 255, 255, palette );
-
-    // setup colors
-    Color fg_color;
-    //Color bg_color = Color(opt_bg_R, opt_bg_G, opt_bg_B);
-    if (opt_fgcolor) {
-        fg_color = Color(opt_fg_R, opt_fg_G, opt_fg_B);
-    }
+    colorGradient(   0, 254, opt_bg_R, opt_bg_G, opt_bg_B, opt_fg_R, opt_fg_G, opt_fg_B, palette );  // forground gradient
+    colorGradient( 254, 255, opt_fg_R, opt_fg_G, opt_fg_B, 255, 255, 255, palette );  // white
+    colorGradient(   0,   1, opt_bg_R, opt_bg_G, opt_bg_B, opt_bg_R, opt_bg_G, opt_bg_B, palette );  // background
 
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(opt_hostname);
@@ -263,7 +257,6 @@ int main(int argc, char *argv[]) {
         int dst = 0;
         for (int y=0; y < opt_height; y++) {
             for (int x=0; x < opt_width; x++) {
-                //canvas.SetPixel( x, y, (pixels[dst] ? fg_color : bg_color) );
                 canvas.SetPixel( x, y, palette[pixels[dst]] );
                 dst++;
             }
