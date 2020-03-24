@@ -71,6 +71,7 @@ int opt_width  = DISPLAY_WIDTH;
 int opt_height = DISPLAY_HEIGHT;
 int opt_xoff=0, opt_yoff=0;
 int opt_delay   = DELAY;
+int opt_bg_R=1, opt_bg_G=1, opt_bg_B=1;
 
 int usage(const char *progname) {
 
@@ -82,6 +83,7 @@ int usage(const char *progname) {
         "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
         "\t-d <delay>     : Delay between frames in milliseconds. (default 10)\n"
+        "\t-b <RRGGBB>    : Background color in hex (-b0 = #010101 default)\n"
     );
     return 1;
 }
@@ -90,7 +92,7 @@ int cmdLine(int argc, char *argv[]) {
 
     // command line options
     int opt;
-    while ((opt = getopt(argc, argv, "?g:l:t:h:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "?g:l:t:h:d:b:")) != -1) {
         switch (opt) {
         case '?':  // help
             return usage(argv[0]);
@@ -122,6 +124,11 @@ int cmdLine(int argc, char *argv[]) {
                 return usage(argv[0]);
             }
             break;
+        case 'b':  // background color
+            if (sscanf(optarg, "%02x%02x%02x", &opt_bg_R, &opt_bg_G, &opt_bg_B) != 3) {
+                opt_bg_R=1, opt_bg_G=1, opt_bg_B=1;  // -b0 flag for black
+            }
+            break;
         default:
             return usage(argv[0]);
         }
@@ -148,7 +155,8 @@ int main(int argc, char *argv[]) {
     const int socket = OpenFlaschenTaschenSocket(opt_hostname);
     UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
 
-    canvas.Clear();
+    // set background color
+    canvas.Fill(Color(opt_bg_R, opt_bg_G, opt_bg_B));
 
     // handle break
     signal(SIGTERM, InterruptHandler);
