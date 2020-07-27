@@ -6,21 +6,13 @@ Here are some programs that I wrote for the [Noisebridge Flaschen Taschen Projec
 
 I've also created [*ft-mod*, a Music Module Player](https://github.com/cgorringe/ft-mod) for the Flaschen Taschen.
 
-![](img/random-dots.jpg)
-![](img/quilt.jpg)
-![](img/nb-logo.jpg)
-![](img/plasma_large.jpg)
-![](img/plasma_small.jpg)
-![](img/lines.jpg)
-![](img/blur_wave.jpg)
-![](img/blur_pong.jpg)
-![](img/hack.jpg)
-![](img/fractal1.jpg)
-![](img/fractal2.jpg)
-![](img/life.jpg)
-![](img/maze.jpg)
-![](img/sierpinski.jpg)
-![](img/matrix.jpg)
+|     |     |     |
+| --- | --- | --- |
+![](img/random-dots.jpg) | ![](img/quilt.jpg) | ![](img/nb-logo.jpg)
+![](img/plasma_large.jpg) | ![](img/plasma_small.jpg) | ![](img/lines.jpg)
+![](img/blur_wave.jpg) | ![](img/blur_pong.jpg) | ![](img/hack.jpg)
+![](img/fractal1.jpg) | ![](img/fractal2.jpg) | ![](img/life.jpg)
+![](img/maze.jpg) | ![](img/sierpinski.jpg) | ![](img/matrix.jpg)
 
 
 ### Install How-to
