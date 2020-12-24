@@ -336,28 +336,14 @@ void drawRandomBolt(int width, int height, uint8_t pixels[]) {
     }
 }
 
-// Draw random dots along 2nd-to bottom row.
-// TEMP: swapped x & y axis for now.
+// Draw random dots along bottom row.
 void drawRandomFire(int width, int height, int orient, uint8_t pixels[]) {
 
-    uint8_t color = 0xFF;
-
-    // clear bottom row
-    int y0 = (height-1) * width;
-    for (int x=1; x < width-2; x++) {
-        pixels[ y0 + x ] = 0;
-    }
-
+    const uint8_t color = 0xFF;
     int num;
     // draw random dots
     if (orient == 0) {
-/*
-        // clear bottom row
-        int by = ((height-1) * width);
-        for (int x=0; x <= width-1; x++) {
-            pixels[ by + x ] = 0;
-        }
-*/
+        // flow upwards
         num = randomInt(1, width-2);
         for (int i=0; i < num; i++) {
             // upwards
@@ -367,17 +353,31 @@ void drawRandomFire(int width, int height, int orient, uint8_t pixels[]) {
         }
     }
     else {
-        // clear right column
-        int bx = width-1;
-        for (int y=0; y <= height-1; y++) {
-            pixels[ (y * width) + bx ] = 0;
-        }
+        // flow leftwards
         num = randomInt(1, height-2);
         for (int i=0; i < num; i++) {
             // leftwards
             int x = width - 1;
             int y = randomInt(1, height-2);
             pixels[ (y * width) + x ] = color;
+        }
+    }
+}
+
+void clearBottomRow(int width, int height, int orient, uint8_t pixels[]) {
+
+    if (orient == 0) {
+        // clear bottom row
+        int by = (height-1) * width;
+        for (int x=0; x < width; x++) {
+            pixels[ by + x ] = 0;
+        }
+    }
+    else {
+        // clear right column
+        int bx = width-1;
+        for (int y=0; y < height; y++) {
+            pixels[ (y * width) + bx ] = 0;
         }
     }
 }
@@ -449,6 +449,7 @@ void blurFire(int width, int height, int orient, uint8_t pixels[]) {
     int size = width * (height - 1) - 1;
     uint8_t dot;
 
+    // TODO: redo this like blur3() to handle right border
     if (orient == 0) {
         // flame upwards (default orientation)
         for (int i=1; i < size; i++) {
@@ -470,14 +471,6 @@ void blurFire(int width, int height, int orient, uint8_t pixels[]) {
             pixels[i + width - 1] = dot;
         }
     }
-
-/*
-    // clear bottom row
-    int by = ((height-1) * width);
-    for (int x=0; x <= width-1; x++) {
-        pixels[ by + x ] = 0;
-    }
-*/
 }
 
 int main(int argc, char *argv[]) {
@@ -530,6 +523,7 @@ int main(int argc, char *argv[]) {
         if (opt_demo == kDemoFire) {
             drawRandomFire(opt_width, opt_height, opt_orient, pixels);
             blurFire(opt_width, opt_height, opt_orient, pixels);
+            clearBottomRow(opt_width, opt_height, opt_orient, pixels);
         }
         else {
             blur3(opt_width, opt_height, pixels);
