@@ -1,7 +1,7 @@
 // -*- mode: c++; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 //
 // blur
-// Copyright (c) 2016 Carl Gorringe (carl.gorringe.org)
+// Copyright (c) 2016-2020 Carl Gorringe (carl.gorringe.org)
 // https://github.com/cgorringe/ft-demos
 // 5/2/2016
 //
@@ -58,12 +58,13 @@
 #define Z_LAYER 1      // (0-15) 0=background
 #define DELAY 50
 #define PALETTE_MAX 3  // 1=Nebula, 2=Fire, 3=Bluegreen
-#define DEMO 0         // 0=bolt, 1=boxes
+#define DEMO 0         // 0=bolt, 1=boxes, 2=circles, 3=target, 4=fire
 
 const int kDemoBolt = 0;
 const int kDemoBoxes = 1;
 const int kDemoCircles = 2;
 const int kDemoTarget = 3;
+const int kDemoFire = 4;
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -83,11 +84,12 @@ int opt_xoff=0, opt_yoff=0;
 int opt_delay  = DELAY;
 int opt_palette = -1;  // default cycles
 int opt_demo = DEMO;
+int opt_orient = 0;
 
 int usage(const char *progname) {
 
-    fprintf(stderr, "Blur (c) 2016 Carl Gorringe (carl.gorringe.org)\n");
-    fprintf(stderr, "Usage: %s [options] {bolt|boxes|circles|target}\n", progname);
+    fprintf(stderr, "Blur (c) 2016-2020 Carl Gorringe (carl.gorringe.org)\n");
+    fprintf(stderr, "Usage: %s [options] {bolt|boxes|circles|target|fire}\n", progname);
     fprintf(stderr, "Options:\n"
         "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
         "\t-l <layer>     : Layer 0-15. (default 1)\n"
@@ -96,6 +98,7 @@ int usage(const char *progname) {
         "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
         "\t-p <palette>   : Set color palette to: (default cycles)\n"
         "\t                  1=Nebula, 2=Fire, 3=Bluegreen\n"
+        "\t-o <orient>    : Set orientation: 0=default, 1=XY-swapped\n"
     );
     return 1;
 }
@@ -104,7 +107,7 @@ int cmdLine(int argc, char *argv[]) {
 
     // command line options
     int opt;
-    while ((opt = getopt(argc, argv, "?g:l:t:h:d:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "?g:l:t:h:d:p:o:")) != -1) {
         switch (opt) {
         case '?':  // help
             return usage(argv[0]);
@@ -142,6 +145,12 @@ int cmdLine(int argc, char *argv[]) {
                 return usage(argv[0]);
             }
             break;
+        case 'o':  // orientation
+            if (sscanf(optarg, "%d", &opt_orient) != 1 || opt_orient < 0 || opt_orient > 1) {
+                fprintf(stderr, "Invalid orientation '%s'\n", optarg);
+                return usage(argv[0]);
+            }
+            break;
         default:
             return usage(argv[0]);
         }
@@ -160,6 +169,9 @@ int cmdLine(int argc, char *argv[]) {
     }
     else if (text && strncmp(text, "target", 6) == 0) {
         opt_demo = kDemoTarget;
+    }
+    else if (text && strncmp(text, "fire", 4) == 0) {
+        opt_demo = kDemoFire;
     }
     else {
         fprintf(stderr, "Missing 'bolt', 'boxes', etc...\n");
@@ -324,6 +336,52 @@ void drawRandomBolt(int width, int height, uint8_t pixels[]) {
     }
 }
 
+// Draw random dots along 2nd-to bottom row.
+// TEMP: swapped x & y axis for now.
+void drawRandomFire(int width, int height, int orient, uint8_t pixels[]) {
+
+    uint8_t color = 0xFF;
+
+    // clear bottom row
+    int y0 = (height-1) * width;
+    for (int x=1; x < width-2; x++) {
+        pixels[ y0 + x ] = 0;
+    }
+
+    int num;
+    // draw random dots
+    if (orient == 0) {
+/*
+        // clear bottom row
+        int by = ((height-1) * width);
+        for (int x=0; x <= width-1; x++) {
+            pixels[ by + x ] = 0;
+        }
+*/
+        num = randomInt(1, width-2);
+        for (int i=0; i < num; i++) {
+            // upwards
+            int x = randomInt(1, width-2);
+            int y = height - 1;
+            pixels[ (y * width) + x ] = color;
+        }
+    }
+    else {
+        // clear right column
+        int bx = width-1;
+        for (int y=0; y <= height-1; y++) {
+            pixels[ (y * width) + bx ] = 0;
+        }
+        num = randomInt(1, height-2);
+        for (int i=0; i < num; i++) {
+            // leftwards
+            int x = width - 1;
+            int y = randomInt(1, height-2);
+            pixels[ (y * width) + x ] = color;
+        }
+    }
+}
+
 // This one works, but requires the following be called prior which results in a black right & bottom border:
 // drawBox(0, 0, opt_width-1, opt_height-1, 0, opt_width, opt_height, pixels);
 
@@ -384,6 +442,44 @@ void blur3(int width, int height, uint8_t pixels[]) {
     pixels[i] = 0;
 }
 
+// Blur for fire effect.
+void blurFire(int width, int height, int orient, uint8_t pixels[]) {
+
+    const int step = 4;
+    int size = width * (height - 1) - 1;
+    uint8_t dot;
+
+    if (orient == 0) {
+        // flame upwards (default orientation)
+        for (int i=1; i < size; i++) {
+            dot = (uint8_t)(( pixels[i - 1] + pixels[i + 1] + pixels[i + width - 1] + pixels[i + width]
+                + pixels[i + width + 1] + pixels[i + 2*width - 1] + pixels[i + 2*width] + pixels[i + 2*width + 1]
+                ) >> 3) & 0xFF;
+            if (dot <= step) { dot = 0; } else { dot -= step; }
+            pixels[i] = dot;
+        }
+    }
+    else {
+        // flame leftwards (orient = 1)
+        for (int i=1; i < size; i++) {
+            if (i % width == 0) continue;
+            dot = (uint8_t)(( pixels[i - 1] + pixels[i] + pixels[i + 1] + pixels[i + width]
+                + pixels[i + width + 1] + pixels[i + 2*width - 1] + pixels[i + 2*width] + pixels[i + 2*width + 1]
+                ) >> 3) & 0xFF;
+            if (dot <= step) { dot = 0; } else { dot -= step; }
+            pixels[i + width - 1] = dot;
+        }
+    }
+
+/*
+    // clear bottom row
+    int by = ((height-1) * width);
+    for (int x=0; x <= width-1; x++) {
+        pixels[ by + x ] = 0;
+    }
+*/
+}
+
 int main(int argc, char *argv[]) {
 
     // parse command line
@@ -431,7 +527,13 @@ int main(int argc, char *argv[]) {
         }
 
         // blur on every frame
-        blur3(opt_width, opt_height, pixels);
+        if (opt_demo == kDemoFire) {
+            drawRandomFire(opt_width, opt_height, opt_orient, pixels);
+            blurFire(opt_width, opt_height, opt_orient, pixels);
+        }
+        else {
+            blur3(opt_width, opt_height, pixels);
+        }
 
         // copy pixel buffer to canvas
         int dst = 0;
