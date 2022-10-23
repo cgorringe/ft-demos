@@ -65,6 +65,7 @@ const int kDemoBoxes = 1;
 const int kDemoCircles = 2;
 const int kDemoTarget = 3;
 const int kDemoFire = 4;
+const int kDemoAll = 5; // always make this +1 after last
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -89,7 +90,7 @@ int opt_orient = 0;
 int usage(const char *progname) {
 
     fprintf(stderr, "Blur (c) 2016-2020 Carl Gorringe (carl.gorringe.org)\n");
-    fprintf(stderr, "Usage: %s [options] {bolt|boxes|circles|target|fire}\n", progname);
+    fprintf(stderr, "Usage: %s [options] {all|bolt|boxes|circles|target|fire}\n", progname);
     fprintf(stderr, "Options:\n"
         "\t-g <W>x<H>[+<X>+<Y>] : Output geometry. (default 45x35+0+0)\n"
         "\t-l <layer>     : Layer 0-15. (default 1)\n"
@@ -158,7 +159,10 @@ int cmdLine(int argc, char *argv[]) {
 
     // retrieve arg text
     const char *text = argv[optind];
-    if (text && strncmp(text, "bolt", 4) == 0) {
+    if (text && strncmp(text, "all", 3) == 0) {
+        opt_demo = kDemoAll;
+    }
+    else if (text && strncmp(text, "bolt", 4) == 0) {
         opt_demo = kDemoBolt;
     }
     else if (text && strncmp(text, "boxes", 5) == 0) {
@@ -499,19 +503,26 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, InterruptHandler);
 
     // other vars
-    int count = 0;
+    int count = 1;
     time_t starttime = time(NULL);
+    int curDemo = (opt_demo == kDemoAll) ? 0 : opt_demo;
 
     do {
         // set new color palette
         if ( ((count % 100) == 0) && (opt_palette < 0) ) {
-            setPalette(curPalette, palette);
             curPalette++;
             if (curPalette > PALETTE_MAX) { curPalette = 1; }
+            setPalette(curPalette, palette);
+        }
+
+        // cycle all demos
+        if ( (opt_demo == kDemoAll) && ((count % 300) == 0) ) {
+            curDemo++;
+            if (curDemo >= kDemoAll) { curDemo = 0; }
         }
 
         if ((count % 2) == 0) {
-            switch (opt_demo) {
+            switch (curDemo) {
                 case kDemoBolt: drawRandomBolt(opt_width, opt_height, pixels); break;
                 case kDemoBoxes: drawRandomBox(opt_width, opt_height, pixels); break;
                 case kDemoCircles: drawRandomCircle(opt_width, opt_height, pixels); break;
@@ -520,7 +531,7 @@ int main(int argc, char *argv[]) {
         }
 
         // blur on every frame
-        if (opt_demo == kDemoFire) {
+        if (curDemo == kDemoFire) {
             drawRandomFire(opt_width, opt_height, opt_orient, pixels);
             blurFire(opt_width, opt_height, opt_orient, pixels);
             clearBottomRow(opt_width, opt_height, opt_orient, pixels);
