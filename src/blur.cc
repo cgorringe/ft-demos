@@ -96,7 +96,7 @@ int usage(const char *progname) {
         "\t-l <layer>     : Layer 0-15. (default 1)\n"
         "\t-t <timeout>   : Timeout exits after given seconds. (default 24hrs)\n"
         "\t-h <host>      : Flaschen-Taschen display hostname. (FT_DISPLAY)\n"
-        "\t-d <delay>     : Delay between frames in milliseconds. (default 25)\n"
+        "\t-d <delay>     : Delay between frames in milliseconds. (default 50)\n"
         "\t-p <palette>   : Set color palette to: (default cycles)\n"
         "\t                  1=Nebula, 2=Fire, 3=Bluegreen\n"
         "\t-o <orient>    : Set orientation: 0=default, 1=XY-swapped\n"
