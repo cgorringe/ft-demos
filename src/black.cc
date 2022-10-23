@@ -171,13 +171,13 @@ int main(int argc, char *argv[]) {
         if (opt_all) {
             // clear ALL layers
             for (int i=0; i <= 15; i++) {
-                canvas.SetOffset(opt_xoff, opt_yoff, i);
+                canvas.SetOffset(opt_xoff + DISPLAY_XOFF, opt_yoff + DISPLAY_YOFF, i);
                 canvas.Send();
             }
         }
         else {
             // clear single layer
-            canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
+            canvas.SetOffset(opt_xoff + DISPLAY_XOFF, opt_yoff + DISPLAY_YOFF, opt_layer);
             canvas.Send();
         }
 

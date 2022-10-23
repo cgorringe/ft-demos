@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
                 canvas.SetPixel(w - y, h - x, Color(r, g, b));
 
                 // send canvas
-                canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
+                canvas.SetOffset(opt_xoff + DISPLAY_XOFF, opt_yoff + DISPLAY_YOFF, opt_layer);
                 canvas.Send();
 
                 if ( (difftime(time(NULL), starttime) >= opt_timeout) || interrupt_received ) {

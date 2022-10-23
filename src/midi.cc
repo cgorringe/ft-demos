@@ -410,7 +410,7 @@ int main(int argc, char *argv[]) {
         }
 
         // send canvas
-        canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
+        canvas.SetOffset(opt_xoff + DISPLAY_XOFF, opt_yoff + DISPLAY_YOFF, opt_layer);
         canvas.Send();
 
         count++;

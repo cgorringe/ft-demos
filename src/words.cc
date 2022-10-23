@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
     // open socket and create our canvas
     const int socket = OpenFlaschenTaschenSocket(opt_hostname);
     UDPFlaschenTaschen canvas(socket, opt_width, opt_height);
-    canvas.SetOffset(opt_xoff, opt_yoff, opt_layer);
+    canvas.SetOffset(opt_xoff + DISPLAY_XOFF, opt_yoff + DISPLAY_YOFF, opt_layer);
     canvas.Clear();
 
     // ***** TODO *****

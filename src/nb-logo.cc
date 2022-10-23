@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
             updateFromPattern(frame, nb_logo, palette[colr]);
         }
 
-        frame->SetOffset(opt_xoff + x, opt_yoff + y, opt_layer);
+        frame->SetOffset(opt_xoff + DISPLAY_XOFF + x, opt_yoff + DISPLAY_YOFF + y, opt_layer);
         frame->Send();
         usleep(opt_delay * 1000);
 
