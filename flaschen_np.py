@@ -44,8 +44,8 @@ class FlaschenNP(object):
                       "0\n",
                       "%d\n" % self.layer])
     self._bytedata = bytearray(width * height * 3 + len(header) + len(footer))
-    self._bytedata[0:len(header)] = header
-    self._bytedata[-1 * len(footer):] = footer
+    self._bytedata[0:len(header)] = str.encode(header)
+    self._bytedata[-1 * len(footer):] = str.encode(footer)
     self.data = np.zeros((height, width, 3), 'uint8')
     self._header_len = len(header)
 
