@@ -17,7 +17,7 @@ def fsa_line(in_line, one_patterns, pad_with = False):
         one_patterns = np.array(one_patterns)
     if len(one_patterns.shape) == 1:
         one_patterns = one_patterns[np.newaxis]
-    for pp in xrange(one_patterns.shape[0]):
+    for pp in range(one_patterns.shape[0]):
         conv = np.correlate(_in_line_padded.astype('int')*2-1,
                             one_patterns[pp].astype('int')*2-1,
                             'valid')
@@ -58,9 +58,9 @@ class FlaschenFSA(object):
 
 def main():
     '''Just run a quick hardcoded demo'''
-    ff = flaschen_np.FlaschenNP('ft.noise', 1337, 45, 35, 11)
+    ff = flaschen_np.FlaschenNP('localhost', 1337, 45, 35, 11)
     line0 = np.zeros(ff.data.shape[1], dtype='bool')
-    line0[line0.shape[0]/2] = True
+    line0[int(line0.shape[0]/2)] = True
 
     # Sierpinski
     #patterns = [[False, False, True], [True, False, False]]
@@ -68,7 +68,7 @@ def main():
     patterns = [[True, False, False], [False, True, True], [False, True, False], [False, False, True]]
     
     fs = FlaschenFSA(ff, line0, patterns)
-    for ii in xrange(100):
+    for ii in range(100):
         fs.step()
         fs.send()
         time.sleep(.05)

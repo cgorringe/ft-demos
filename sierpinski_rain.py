@@ -12,7 +12,7 @@ def main():
     )
 
     # Optimization
-    parser.add_argument('--host', type=str, default='ft.noise', help='Host to send packets to')
+    parser.add_argument('--host', type=str, default='localhost', help='Host to send packets to')
     parser.add_argument('--port', type=int, default=1337, help='Port to send packets to')
     parser.add_argument('--height', type=int, default=35, help='Canvas height')
     parser.add_argument('--width', type=int, default=45, help='Canvas width')
@@ -34,7 +34,7 @@ def main():
     
     ff = flaschen_np.FlaschenNP(args.host, args.port, args.width, args.height, args.layer)
     line0 = np.zeros(ff.data.shape[1], dtype='bool')
-    line0[line0.shape[0]/2] = True
+    line0[int(line0.shape[0]/2)] = True
 
     if args.pattern == 'sierp':
         # Sierpinski
