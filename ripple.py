@@ -5,6 +5,7 @@ import flaschen_np
 import time
 import argparse
 
+
 def main():
     parser = argparse.ArgumentParser(description='Ripple',
                                      formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(prog))
@@ -14,7 +15,7 @@ def main():
     parser.add_argument('--height', type=int, default=35, help='Canvas height')
     parser.add_argument('--width', type=int, default=45, help='Canvas width')
     parser.add_argument('--layer', '-l', type=int, default=11, help='Canvas layer (0-15)')
-    parser.add_argument('--time', '-t', type=float, default=1, help='How long to run for before exiting')
+    parser.add_argument('--time', '-t', type=int, default=1, help='How long to run for before exiting')
     parser.add_argument('--sleep', '-s', type=float, default=.01, help='How long to sleep after each line')
 
     args = parser.parse_args()
@@ -33,7 +34,7 @@ def main():
     dt = .025
     Nt = 2000
 
-    c = 1 
+    c = 1
     u = numpy.zeros([Nt, len(x_vec), len(y_vec)])
 
     u[0, Nx // 2, Ny // 2] = numpy.sin(0)
@@ -50,7 +51,7 @@ def main():
 
     ff = flaschen_np.FlaschenNP(args.host, args.port, args.width, args.height, args.layer)
 
-    for t in range(int(args.time)):
+    for t in range(args.time):
         for i in list(u) + list(u[::-1]):
             for x in range(0, Nx):
                 for y in range(0, Ny):
